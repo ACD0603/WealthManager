@@ -1,480 +1,817 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WealthManager Pro</title>
+    <title>WealthManager Pro - Tableau de Bord & Synchronisation Partagée</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass-effect { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); }
+        .animate-fade-in { animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .pulse-subtle { animation: pulseGlow 2s infinite; }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="min-h-full flex flex-col text-slate-800 bg-slate-50">
 
-    <header class="glass-effect border-b border-slate-200 sticky top-0 z-30">
-        <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+    <!-- Header / Navigation bar -->
+    <header class="sticky top-0 w-full z-40 glass border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <div class="bg-indigo-600 p-2 rounded-lg shadow-md shadow-indigo-200">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                <div class="w-10 h-10 bg-gradient-to-tr from-indigo-600 via-indigo-700 to-purple-600 rounded-xl flex items-center justify-center text-white font-extrabold text-lg shadow-md shadow-indigo-200">
+                    WM
                 </div>
-                <h1 class="text-xl font-bold text-slate-900 tracking-tight">WealthManager</h1>
+                <div>
+                    <h1 class="font-bold text-xl text-slate-900 tracking-tight leading-none">WealthManager <span class="text-indigo-600">Pro</span></h1>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">Gestion de Patrimoine Synchronisée</p>
+                </div>
             </div>
-            <div id="headerAuth" class="flex items-center gap-4">
-                <div id="authStatus" class="flex items-center gap-2 text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1.5 rounded-full">
-                    <div class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></div>
-                    Chargement...
+
+            <!-- Workspace Sync Selector Badge & Auth -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Sync indicator badge -->
+                <button onclick="openWorkspaceModal()" class="flex items-center gap-2 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-xl border border-indigo-200/80 font-medium transition shadow-sm">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span class="hidden md:inline text-slate-500">Espace :</span>
+                    <span id="header-workspace-name" class="font-bold text-indigo-900">Chargement...</span>
+                    <span class="text-indigo-400">⚡</span>
+                </button>
+
+                <div id="auth-status" class="hidden sm:flex items-center gap-2 text-xs bg-slate-100 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 font-medium">
+                    <span id="user-id-display">Mode Partagé</span>
                 </div>
-                <button id="deleteAccountBtn" class="hidden text-sm font-semibold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-lg hover:bg-rose-100 transition-colors">Supprimer mon compte</button>
-                <button id="logoutBtn" class="hidden text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">Déconnexion</button>
+
+                <button id="btn-logout" onclick="handleLogout()" class="hidden text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-2 rounded-xl transition">
+                    Déconnexion
+                </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-6 py-8 relative">
-        <div id="messageBox" class="hidden mb-6 p-4 rounded-xl border flex items-center justify-between shadow-sm transition-all duration-300">
-            <span id="messageText" class="font-medium"></span>
-            <button onclick="document.getElementById('messageBox').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">✕</button>
+    <main class="pt-6 pb-20 px-4 sm:px-6 max-w-7xl mx-auto w-full flex-grow">
+
+        <!-- Synchronized Workspace Notification Banner -->
+        <div class="mb-6 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-2xl p-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg border border-indigo-800/50">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-500/20 rounded-xl text-indigo-300 text-xl border border-indigo-400/20">
+                    🔄
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-bold text-sm text-indigo-100">Synchronisation Multi-Pages Active</h3>
+                        <span class="px-2 py-0.5 text-[10px] uppercase tracking-wider font-extrabold bg-emerald-500/20 text-emerald-300 rounded-md border border-emerald-400/30">En direct</span>
+                    </div>
+                    <p class="text-xs text-indigo-200/80 mt-0.5">Toutes les pages portant le même nom d'espace <span id="banner-workspace-tag" class="font-bold text-white underline decoration-indigo-400">"..."</span> affichent exactement les mêmes données en temps réel.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button onclick="copyWorkspaceCode()" class="text-xs bg-white/10 hover:bg-white/20 text-indigo-100 font-semibold px-3 py-2 rounded-xl border border-white/10 transition flex items-center gap-1.5 active:scale-95">
+                    <span>📋</span> Copier le nom
+                </button>
+                <button onclick="openWorkspaceModal()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3.5 py-2 rounded-xl transition shadow-md shadow-indigo-950 active:scale-95">
+                    Changer d'Espace
+                </button>
+            </div>
         </div>
 
-        <section id="loginSection" class="hidden max-w-md mx-auto mt-12 bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center">
-            <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-600">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-            </div>
-            <h2 class="text-2xl font-bold text-slate-900 mb-2">Bienvenue</h2>
-            <p class="text-slate-500 text-sm mb-6">Connectez-vous ou créez un compte. Une vérification par e-mail sera requise.</p>
-            
-            <form id="loginForm" class="space-y-4">
-                <input type="email" id="loginEmail" required placeholder="votre@email.com" class="w-full p-3 text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                <input type="password" id="loginPassword" required placeholder="Mot de passe (6 car. min)" minlength="6" class="w-full p-3 text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                
-                <div class="flex gap-3 pt-2">
-                    <button type="button" id="registerBtn" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all">S'inscrire</button>
-                    <button type="submit" id="loginBtn" class="w-1/2 bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
-                        Connexion
-                    </button>
+        <!-- Auth Section (Shown when logged out) -->
+        <section id="loginSection" class="max-w-md mx-auto my-8 bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border border-slate-100 animate-fade-in hidden">
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 font-bold text-2xl border border-indigo-100">
+                    🔒
                 </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Espace Privé</h2>
+                <p class="text-slate-500 text-sm mt-2">Connectez-vous pour accéder à votre patrimoine sécurisé.</p>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="flex border-b border-slate-200 mb-6 text-sm font-semibold">
+                <button id="tab-login-btn" onclick="switchAuthTab('login')" class="w-1/2 py-2 border-b-2 border-indigo-600 text-indigo-600 transition">Connexion</button>
+                <button id="tab-signup-btn" onclick="switchAuthTab('signup')" class="w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition">S'inscrire</button>
+            </div>
+
+            <form id="loginForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Adresse email</label>
+                    <input type="email" id="loginEmail" required placeholder="adresse@email.com" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Mot de passe</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition">
+                </div>
+                
+                <button type="submit" id="authSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-slate-200 text-sm active:scale-95">
+                    Se connecter
+                </button>
             </form>
+
+            <div class="mt-6 pt-6 border-t border-slate-100 text-center">
+                <p class="text-xs text-slate-400 mb-3">Ou accédez directement en mode démonstration :</p>
+                <button onclick="handleDemoLogin()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                    <span>🚀</span> Accès Démo Rapide (Invité)
+                </button>
+            </div>
         </section>
 
-        <div id="appSection" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- Formulaire d'ajout -->
-            <section class="lg:col-span-4">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-28">
-                    <h2 class="text-lg font-bold text-slate-900 mb-6">Ajouter un actif</h2>
-                    <form id="assetForm" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Type</label>
-                            <select id="assetType" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                                <option value="Action">Actions & Bourse</option>
-                                <option value="Immobilier">Immobilier</option>
-                                <option value="Montre">Montres de luxe</option>
-                                <option value="Crypto">Crypto-monnaies</option>
-                                <option value="Autre">Autres actifs</option>
-                            </select>
+        <!-- Dashboard Section -->
+        <div id="dashboardSection" class="space-y-8 animate-fade-in">
+            
+            <!-- Hero Consolidated Net Worth Card -->
+            <section class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden border border-slate-800">
+                <div class="absolute -right-10 -top-10 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    <div>
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-400/20 mb-3">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            Patrimoine Consolidé - <span id="hero-space-name">Espace Général</span>
+                        </span>
+                        <h2 class="text-indigo-200 font-medium tracking-wide uppercase text-xs">Valeur totale de votre patrimoine</h2>
+                        <div id="total-patrimoine" class="text-3xl sm:text-5xl font-extrabold mt-2 tracking-tight text-white">
+                            0,00 €
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nom de l'actif</label>
-                            <input type="text" id="symbol" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ex: LVMH, Rolex Daytona">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Qté</label>
-                                <input type="number" id="qty" required step="any" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Prix (€)</label>
-                                <input type="number" id="price" required step="0.01" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
-                        </div>
-                        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-200">
-                            Ajouter au portefeuille
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button onclick="openAddModal()" class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-5 py-3 rounded-2xl transition shadow-lg shadow-emerald-900/30 text-sm active:scale-95">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Ajouter un bien / actif
                         </button>
-                    </form>
+                    </div>
+                </div>
+
+                <!-- Breakdown progress bar -->
+                <div class="mt-8 pt-6 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                    <div>
+                        <p class="text-slate-400 font-medium">🏠 Immobilier</p>
+                        <p id="subtotal-immobilier" class="text-sm font-bold text-slate-200 mt-0.5">0,00 €</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 font-medium">📈 Bourse & Actions</p>
+                        <p id="subtotal-bourse" class="text-sm font-bold text-slate-200 mt-0.5">0,00 €</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 font-medium">🏦 Comptes & Epargne</p>
+                        <p id="subtotal-bancaire" class="text-sm font-bold text-slate-200 mt-0.5">0,00 €</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 font-medium">🛡️ Alternatifs & Crypto</p>
+                        <p id="subtotal-alternatifs" class="text-sm font-bold text-slate-200 mt-0.5">0,00 €</p>
+                    </div>
                 </div>
             </section>
 
-            <section class="lg:col-span-8">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <h2 class="font-bold text-slate-900 text-lg">Portefeuille Actuel</h2>
-                        <div class="flex items-center gap-3">
-                            <span class="text-sm font-medium text-slate-500">Valorisation globale</span>
-                            <div id="totalValue" class="text-indigo-600 font-bold bg-indigo-50 px-4 py-2 rounded-xl text-lg tracking-tight">0.00 €</div>
-                        </div>
+            <!-- Quick Access / Category Pills -->
+            <section>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-slate-900">Accès rapide & Filtrage</h3>
+                    <span id="asset-count-badge" class="text-xs font-semibold bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">0 actif(s)</span>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <button onclick="setCategoryFilter('ALL')" id="pill-ALL" class="p-4 bg-white border-2 border-indigo-600 rounded-2xl shadow-sm text-left transition hover:shadow-md">
+                        <div class="text-indigo-600 mb-1 text-xl">🌐</div>
+                        <p class="font-bold text-slate-900 text-sm">Tous les biens</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Vue globale</p>
+                    </button>
+                    <button onclick="setCategoryFilter('Bancaire')" id="pill-Bancaire" class="p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-indigo-500 hover:shadow-md">
+                        <div class="text-indigo-600 mb-1 text-xl">🏦</div>
+                        <p class="font-bold text-slate-800 text-sm">Bancaire</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Livrets & Comptes</p>
+                    </button>
+                    <button onclick="setCategoryFilter('Immobilier')" id="pill-Immobilier" class="p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-emerald-500 hover:shadow-md">
+                        <div class="text-emerald-600 mb-1 text-xl">🏠</div>
+                        <p class="font-bold text-slate-800 text-sm">Immobilier</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Résidences & Locatif</p>
+                    </button>
+                    <button onclick="setCategoryFilter('Bourse')" id="pill-Bourse" class="p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-amber-500 hover:shadow-md">
+                        <div class="text-amber-600 mb-1 text-xl">📈</div>
+                        <p class="font-bold text-slate-800 text-sm">Bourse</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Actions, PEA, CTO</p>
+                    </button>
+                    <button onclick="setCategoryFilter('Alternatifs')" id="pill-Alternatifs" class="p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-purple-500 hover:shadow-md col-span-2 sm:col-span-1">
+                        <div class="text-purple-600 mb-1 text-xl">🛡️</div>
+                        <p class="font-bold text-slate-800 text-sm">Alternatifs</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Crypto & Assurances</p>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Search & Assets Table Container -->
+            <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                    <div class="relative w-full sm:w-80">
+                        <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input id="search-input" oninput="renderAssets()" type="text" placeholder="Rechercher (ex: Appartement, PEA, LVMH)..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="text-xs text-slate-400 uppercase bg-slate-50/50 border-b border-slate-100">
-                                <tr>
-                                    <th class="px-6 py-4">Actif</th>
-                                    <th class="px-6 py-4 text-right">Qté</th>
-                                    <th class="px-6 py-4 text-right">Prix Unitaire</th>
-                                    <th class="px-6 py-4 text-right">Valeur Totale</th>
-                                    <th class="px-6 py-4 text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="assetsBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                        <div id="emptyState" class="hidden p-12 text-center text-slate-400">
-                            Aucun actif dans votre portefeuille. Ajoutez-en un pour commencer !
-                        </div>
+
+                    <div class="flex items-center gap-2 text-xs font-medium text-slate-500">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        Synchronisé avec Firestore (Espace Partagé)
                     </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 font-semibold">Nom du bien / Actif</th>
+                                <th class="px-6 py-4 font-semibold">Catégorie</th>
+                                <th class="px-6 py-4 font-semibold">Détails / Qté</th>
+                                <th class="px-6 py-4 font-semibold">Prix Unitaire</th>
+                                <th class="px-6 py-4 font-semibold text-right">Valeur Totale</th>
+                                <th class="px-6 py-4 font-semibold text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assets-list-body" class="divide-y divide-slate-100 text-sm">
+                            <tr>
+                                <td colspan="6" class="px-6 py-16 text-center text-slate-400">
+                                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mb-3"></div>
+                                    <p class="text-sm font-medium text-slate-600">Connexion à l'espace synchronisé...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </div>
     </main>
 
+    <!-- Modal: Workspace / Shared Name Switcher -->
+    <div id="workspace-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 transform transition-all animate-fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xl">
+                        🔗
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900">Espace Partagé</h3>
+                        <p class="text-xs text-slate-500">Entrez le nom d'un dossier pour synchroniser</p>
+                    </div>
+                </div>
+                <button onclick="closeWorkspaceModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form onsubmit="handleWorkspaceSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nom de l'Espace ou du Dossier</label>
+                    <input id="input-workspace-name" type="text" required placeholder="ex: Patrimoine-Famille, MonPatrimoine, SCI-2026" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-semibold text-indigo-900">
+                    <p class="text-xs text-slate-400 mt-2">💡 Toutes les personnes ou tous les onglets saisissant exactement ce même nom verront leurs données synchronisées instantanément.</p>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeWorkspaceModal()" class="w-1/2 px-4 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 text-sm transition">
+                        Annuler
+                    </button>
+                    <button type="submit" class="w-1/2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-indigo-200 active:scale-95">
+                        Rejoindre l'espace
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add / Edit Asset -->
+    <div id="asset-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 transform transition-all animate-fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modal-title" class="text-xl font-bold text-slate-900">Ajouter un actif</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form id="asset-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="modal-asset-id">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nom ou Libellé</label>
+                    <input id="modal-asset-name" type="text" required placeholder="ex: Appartement T3 Lille, PEA Boursorama, Livret A" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Catégorie</label>
+                    <select id="modal-asset-category" onchange="toggleCategoryFields()" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-medium text-slate-700">
+                        <option value="Immobilier">🏠 Immobilier</option>
+                        <option value="Bourse">📈 Actions & Bourse</option>
+                        <option value="Bancaire">🏦 Compte Bancaire / Épargne</option>
+                        <option value="Alternatifs">🛡️ Crypto / Assurance / Alternatifs</option>
+                    </select>
+                </div>
+
+                <!-- Unit-based assets (Stocks, Crypto, Qty x Price) -->
+                <div id="unit-fields" class="grid grid-cols-2 gap-3 hidden">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Quantité</label>
+                        <input id="modal-asset-qty" type="number" step="any" min="0" placeholder="ex: 15" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Prix Unit. (€)</label>
+                        <input id="modal-asset-price" type="number" step="any" min="0" placeholder="ex: 650.00" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                    </div>
+                </div>
+
+                <!-- Direct valuation/balance assets (Real Estate, Savings) -->
+                <div id="balance-field">
+                    <label id="balance-label" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Valeur estimée (€)</label>
+                    <div class="relative">
+                        <input id="modal-asset-balance" type="number" step="any" min="0" placeholder="250000" class="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">€</span>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeModal()" class="w-1/2 px-4 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 text-sm transition">
+                        Annuler
+                    </button>
+                    <button type="submit" id="modal-submit-btn" class="w-1/2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-indigo-200 active:scale-95">
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Delete Confirmation -->
+    <div id="delete-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-fade-in text-center">
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 font-bold text-xl">
+                🗑️
+            </div>
+            
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Supprimer cet actif ?</h3>
+            <p class="text-xs text-slate-500 mb-6">Êtes-vous sûr de vouloir retirer <span id="delete-asset-name" class="font-semibold text-slate-800">cet actif</span> ? Cette action sera synchronisée sur toutes les pages ouvertes.</p>
+
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="w-1/2 px-4 py-2.5 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 text-sm transition">
+                    Annuler
+                </button>
+                <button onclick="confirmDeleteAsset()" class="w-1/2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl text-sm transition shadow-md shadow-red-200 active:scale-95">
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Box -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
+        // Global environment bindings
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wealth-manager-pro';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyC44TI-kF0B-E999nxSq0mpn5me6Ncay4s",
             authDomain: "solution-client-c9f55.firebaseapp.com",
-            projectId: "solution-client-c9f55",
-            storageBucket: "solution-client-c9f55.firebasestorage.app",
-            messagingSenderId: "1050759897620",
-            appId: "1:1050759897620:web:831df2028dcf846e287d01"
+            projectId: "solution-client-c9f55"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        // Configuration de l'AppID pour respecter la structure stricte des chemins
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wealth-manager-app';
-        let userUid = null;
-        let unsubscribeSnapshot = null;
-        let isRegistering = false; // Variable de sécurité pendant l'inscription
 
-        // Éléments du DOM
-        const loginSection = document.getElementById('loginSection');
-        const appSection = document.getElementById('appSection');
-        const authStatus = document.getElementById('authStatus');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-        const assetForm = document.getElementById('assetForm');
-        const assetsBody = document.getElementById('assetsBody');
-        const totalValueEl = document.getElementById('totalValue');
-        const emptyState = document.getElementById('emptyState');
+        let rawAssets = [];
+        let activeCategoryFilter = 'ALL';
+        let assetToDeleteId = null;
+        let currentUser = null;
+        let currentUnsubscribe = null;
 
-        const notify = (msg, isErr = false) => {
-            const box = document.getElementById('messageBox');
-            box.classList.remove('hidden', 'bg-green-50', 'text-green-800', 'bg-red-50', 'text-red-800', 'border-green-200', 'border-red-200');
-            box.classList.add(isErr ? 'bg-red-50' : 'bg-green-50', isErr ? 'text-red-800' : 'text-green-800', isErr ? 'border-red-200' : 'border-green-200');
-            document.getElementById('messageText').textContent = msg;
-            setTimeout(() => box.classList.add('hidden'), 5000);
+        // Shared Workspace Name (Default to "MonPatrimoine" or retrieve from URL / LocalStorage)
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentWorkspaceName = urlParams.get('workspace') || localStorage.getItem('wm_workspace_name') || 'MonPatrimoine';
+
+        // BroadcastChannel for instant local tab-to-tab notification
+        const syncChannel = new BroadcastChannel('wm_sync_channel');
+        syncChannel.onmessage = (event) => {
+            if (event.data && event.data.type === 'WORKSPACE_CHANGED') {
+                if (event.data.workspace !== currentWorkspaceName) {
+                    showToast(`Un autre onglet a basculé vers l'espace : ${event.data.workspace}`, 'info');
+                }
+            }
         };
 
-        const fmt = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
+        const categoryMeta = {
+            'Immobilier': { label: 'Immobilier', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: '🏠', isUnit: false, labelBalance: 'Valeur du bien (€)' },
+            'Bourse': { label: 'Bourse & Actions', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', icon: '📈', isUnit: true },
+            'Bancaire': { label: 'Bancaire & Épargne', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', icon: '🏦', isUnit: false, labelBalance: 'Solde courant / épargne (€)' },
+            'Alternatifs': { label: 'Alternatifs & Crypto', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', icon: '🛡️', isUnit: false, labelBalance: 'Valeur du contrat / portfolio (€)' }
+        };
 
-        // 1. Connexion (Login)
-        document.getElementById('loginForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const btn = document.getElementById('loginBtn');
-            const originalText = btn.innerHTML;
+        // Formatters
+        const formatEUR = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val || 0);
+        const formatQty = (val) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 4 }).format(val || 0);
+
+        function sanitizeWorkspaceName(str) {
+            return (str || 'MonPatrimoine')
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]/g, '_')
+                .substring(0, 40) || 'monpatrimoine';
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let bgClass = 'bg-slate-900 text-white';
+            if (type === 'error') bgClass = 'bg-red-600 text-white';
+            if (type === 'info') bgClass = 'bg-indigo-600 text-white';
+
+            toast.className = `${bgClass} px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2 animate-fade-in pointer-events-auto border border-white/10`;
+            toast.innerHTML = `
+                <span>${type === 'success' ? '✓' : type === 'info' ? 'ℹ️' : '⚠️'}</span>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Initialize Authentication before Firestore listeners
+        async function ensureAuthenticated() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.warn("Falling back to anonymous sign-in:", e);
+                if (!auth.currentUser) await signInAnonymously(auth);
+            }
+        }
+
+        // Connect real-time listener to current shared portfolio workspace
+        async function subscribeToWorkspace(workspaceName) {
+            await ensureAuthenticated();
+            if (!auth.currentUser) return;
+
+            currentWorkspaceName = workspaceName;
+            localStorage.setItem('wm_workspace_name', workspaceName);
             
-            btn.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span>...';
-            btn.disabled = true;
+            const cleanSlug = sanitizeWorkspaceName(workspaceName);
+            
+            // Update UI Labels
+            document.getElementById('header-workspace-name').innerText = workspaceName;
+            document.getElementById('banner-workspace-tag').innerText = `"${workspaceName}"`;
+            document.getElementById('hero-space-name').innerText = `Espace "${workspaceName}"`;
 
-            try {
-                // La validation du statut (Approuvé ou non) se fera automatiquement dans onAuthStateChanged
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                console.error(error);
-                let msg = "Erreur de connexion. Vérifiez vos identifiants.";
-                if (error.code === 'auth/invalid-credential') msg = "E-mail ou mot de passe incorrect.";
-                notify(msg, true);
-                
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        };
-
-        // 2. Inscription (Sign Up) - Attente d'approbation manuelle
-        document.getElementById('registerBtn').onclick = async () => {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const btn = document.getElementById('registerBtn');
-
-            if (!email || !password) {
-                notify("Veuillez renseigner l'e-mail et le mot de passe pour vous inscrire.", true);
-                return;
-            }
-            if (password.length < 6) {
-                notify("Le mot de passe doit contenir au moins 6 caractères.", true);
-                return;
+            // Unsubscribe existing listener if switching workspaces
+            if (currentUnsubscribe) {
+                currentUnsubscribe();
             }
 
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Création...';
-            btn.disabled = true;
-            isRegistering = true; // Empêche onAuthStateChanged d'interférer pendant l'écriture
+            // Path adhering strictly to Rule 1: /artifacts/{appId}/public/data/{collectionName}
+            const publicCollectionName = `portfolio_${cleanSlug}`;
+            const assetsRef = collection(db, 'artifacts', appId, 'public', 'data', publicCollectionName);
 
-            try {
-                // Création du compte
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const userUid = userCredential.user.uid;
-                
-                // --- ENREGISTREMENT AVEC STATUT "En attente" ---
-                await setDoc(doc(db, 'artifacts', appId, 'users', userUid), {
-                    email: email,
-                    dateInscription: new Date().toLocaleString('fr-FR'),
-                    statut: "En attente", // <- C'est ce statut que vous devrez modifier !
-                    derniereConnexion: "-"
+            currentUnsubscribe = onSnapshot(assetsRef, (snapshot) => {
+                rawAssets = [];
+                snapshot.forEach((doc) => {
+                    rawAssets.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
                 });
-                
-                // On déconnecte l'utilisateur immédiatement pour le bloquer
-                await signOut(auth);
-                
-                notify('✨ Demande envoyée ! Vous devez attendre que l\'administrateur approuve votre compte.');
-                document.getElementById('loginForm').reset();
-            } catch (error) {
-                console.error(error);
-                let msg = "Erreur lors de l'inscription.";
-                if (error.code === 'auth/email-already-in-use') msg = "Cette adresse e-mail est déjà en attente ou utilisée.";
-                notify(msg, true);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                isRegistering = false;
-            }
-        };
 
-        logoutBtn.onclick = () => signOut(auth);
-
-        // --- Logique de suppression de compte ---
-        deleteAccountBtn.onclick = async () => {
-            const user = auth.currentUser;
-            if (!user) return;
-
-            // Système de double clic pour confirmer (remplace la fenêtre de confirmation classique)
-            if (deleteAccountBtn.dataset.confirm !== "true") {
-                deleteAccountBtn.dataset.confirm = "true";
-                deleteAccountBtn.innerText = "Sûr ? (Cliquez pour confirmer)";
-                deleteAccountBtn.classList.replace('bg-rose-50', 'bg-rose-600');
-                deleteAccountBtn.classList.replace('text-rose-700', 'text-white');
-                
-                // Réinitialiser le bouton après 4 secondes si l'utilisateur ne confirme pas
-                setTimeout(() => {
-                    deleteAccountBtn.dataset.confirm = "false";
-                    deleteAccountBtn.innerText = "Supprimer mon compte";
-                    deleteAccountBtn.classList.replace('bg-rose-600', 'bg-rose-50');
-                    deleteAccountBtn.classList.replace('text-white', 'text-rose-700');
-                }, 4000);
-                return;
-            }
-
-            try {
-                deleteAccountBtn.innerText = "Suppression...";
-                deleteAccountBtn.disabled = true;
-
-                // 1. D'abord : Supprimer le profil utilisateur dans Firestore
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid));
-                
-                // (Note : Dans un vrai projet de production, il faudrait aussi boucler sur la sous-collection 'stocks' pour tout effacer, 
-                // mais effacer le document principal rend l'accès au compte impossible).
-
-                // 2. Ensuite : Supprimer le compte système (Authentification)
-                await deleteUser(user);
-                
-                // Si réussi, Firebase déclenche onAuthStateChanged et déconnecte l'utilisateur
-                notify('Votre compte et vos données ont été supprimés définitivement.');
-            } catch (error) {
-                console.error(error);
-                // Si l'utilisateur s'est connecté il y a trop longtemps, Firebase exige une reconnexion par sécurité
-                if (error.code === 'auth/requires-recent-login') {
-                    notify("Par sécurité, veuillez vous déconnecter puis vous reconnecter avant de supprimer votre compte.", true);
-                } else {
-                    notify("Erreur lors de la suppression du compte.", true);
-                }
-                
-                // Réinitialiser le bouton en cas d'erreur
-                deleteAccountBtn.dataset.confirm = "false";
-                deleteAccountBtn.innerText = "Supprimer mon compte";
-                deleteAccountBtn.classList.replace('bg-rose-600', 'bg-rose-50');
-                deleteAccountBtn.classList.replace('text-white', 'text-rose-700');
-                deleteAccountBtn.disabled = false;
-            }
-        };
-        // ----------------------------------------
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Si l'utilisateur est en plein processus d'inscription, on ignore cet évènement
-                if (isRegistering) return;
-
-                // --- VÉRIFICATION DU STATUT PAR L'ADMINISTRATEUR ---
-                try {
-                    const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid));
-                    
-                    if (userDoc.exists() && userDoc.data().statut === "Approuvé") {
-                        // UTILISATEUR APPROUVÉ ! On lui donne l'accès.
-                        userUid = user.uid;
-                        loginSection.classList.add('hidden');
-                        appSection.classList.remove('hidden');
-                        logoutBtn.classList.remove('hidden');
-                        deleteAccountBtn.classList.remove('hidden');
-                        
-                        authStatus.innerHTML = `
-                            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                            <span class="truncate max-w-[150px]" title="${user.email}">${user.email}</span>
-                        `;
-
-                        // Mise à jour de la dernière connexion
-                        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid), {
-                            derniereConnexion: new Date().toLocaleString('fr-FR')
-                        }, { merge: true });
-
-                        // Réinitialiser le bouton de connexion s'il tournait encore
-                        const btn = document.getElementById('loginBtn');
-                        if (btn) {
-                            btn.innerHTML = 'Connexion';
-                            btn.disabled = false;
-                        }
-
-                        // Charger les données de l'utilisateur
-                        loadUserData();
-                        notify("Connexion réussie ! Bienvenue.");
-                    } else {
-                        // UTILISATEUR NON APPROUVÉ (Statut "En attente" ou autre)
-                        await signOut(auth);
-                        notify("Accès refusé : Votre compte est en attente de validation par l'administrateur.", true);
-                        
-                        // Réinitialiser le bouton de connexion
-                        const btn = document.getElementById('loginBtn');
-                        if (btn) {
-                            btn.innerHTML = 'Connexion';
-                            btn.disabled = false;
-                        }
-                    }
-                } catch (error) {
-                    console.error("Erreur de vérification des droits:", error);
-                    await signOut(auth);
-                    notify("Erreur lors de la vérification de vos droits d'accès.", true);
-                }
-            } else {
-                // Utilisateur Déconnecté (ou refusé)
-                userUid = null;
-                loginSection.classList.remove('hidden');
-                appSection.classList.add('hidden');
-                logoutBtn.classList.add('hidden');
-                deleteAccountBtn.classList.add('hidden');
-                
-                authStatus.innerHTML = `
-                    <div class="w-2 h-2 rounded-full bg-slate-400"></div>
-                    Non connecté
-                `;
-                
-                // Nettoyer l'interface
-                assetsBody.innerHTML = '';
-                totalValueEl.textContent = '0.00 €';
-                if (unsubscribeSnapshot) {
-                    unsubscribeSnapshot();
-                }
-                
-                // Nettoyer les champs de connexion
-                if (document.getElementById('loginForm')) {
-                   document.getElementById('loginForm').reset();
-                }
-            }
-        });
-
-        function loadUserData() {
-            if (!userUid) return;
-            
-            // Chemin strict respectant la consigne "artifacts/{appId}/users/{userId}/collection"
-            const stocksRef = collection(db, 'artifacts', appId, 'users', userUid, 'stocks');
-            
-            unsubscribeSnapshot = onSnapshot(stocksRef, (snap) => {
-                let total = 0;
-                assetsBody.innerHTML = '';
-                
-                if (snap.empty) {
-                    emptyState.classList.remove('hidden');
-                } else {
-                    emptyState.classList.add('hidden');
-                }
-
-                snap.forEach((d) => {
-                    const data = d.data();
-                    const val = data.qty * data.price;
-                    total += val;
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50 transition-colors group";
-                    tr.innerHTML = `
-                        <td class="px-6 py-4 font-semibold text-slate-800">
-                            ${data.symbol}
-                            <span class="block mt-1 text-[10px] text-slate-400 uppercase font-bold tracking-wider">${data.type}</span>
-                        </td>
-                        <td class="px-6 py-4 text-right text-slate-600">${data.qty}</td>
-                        <td class="px-6 py-4 text-right text-slate-600">${fmt(data.price)}</td>
-                        <td class="px-6 py-4 text-right font-bold text-slate-900">${fmt(val)}</td>
-                        <td class="px-6 py-4 text-center">
-                            <button onclick="deleteAsset('${d.id}')" class="text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 p-2">
-                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </td>
-                    `;
-                    assetsBody.appendChild(tr);
-                });
-                
-                // Animation simple de mise à jour du total
-                totalValueEl.style.transform = 'scale(1.05)';
-                totalValueEl.textContent = fmt(total);
-                setTimeout(() => totalValueEl.style.transform = 'scale(1)', 200);
+                rawAssets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                updateCalculatedTotals();
+                renderAssets();
             }, (error) => {
-                console.error("Erreur de lecture :", error);
-                notify("Erreur lors du chargement de vos données.", true);
+                console.error("Firestore workspace sync error:", error);
+                showToast("Erreur de synchronisation réseau", "error");
             });
         }
 
-        assetForm.onsubmit = async (e) => {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                subscribeToWorkspace(currentWorkspaceName);
+            }
+        });
+
+        window.openWorkspaceModal = () => {
+            document.getElementById('input-workspace-name').value = currentWorkspaceName;
+            document.getElementById('workspace-modal').classList.remove('hidden');
+        };
+
+        window.closeWorkspaceModal = () => {
+            document.getElementById('workspace-modal').classList.add('hidden');
+        };
+
+        window.handleWorkspaceSubmit = (e) => {
             e.preventDefault();
-            if (!userUid) return;
+            const newName = document.getElementById('input-workspace-name').value.trim();
+            if (!newName) return;
 
-            const btn = document.getElementById('submitBtn');
-            const originalText = btn.innerText;
-            btn.innerText = 'Ajout en cours...';
-            btn.disabled = true;
+            subscribeToWorkspace(newName);
+            closeWorkspaceModal();
+            showToast(`Espace synchronisé connecté : "${newName}" !`, 'info');
 
-            try {
-                const stocksRef = collection(db, 'artifacts', appId, 'users', userUid, 'stocks');
-                await addDoc(stocksRef, {
-                    type: document.getElementById('assetType').value,
-                    symbol: document.getElementById('symbol').value,
-                    qty: parseFloat(document.getElementById('qty').value),
-                    price: parseFloat(document.getElementById('price').value),
-                    timestamp: new Date()
-                });
-                notify('Actif ajouté avec succès.');
-                assetForm.reset();
-                document.getElementById('symbol').focus();
-            } catch (err) { 
-                console.error(err);
-                notify('Erreur lors de l\'ajout : ' + err.message, true); 
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
+            // Notify other open tabs
+            syncChannel.postMessage({ type: 'WORKSPACE_CHANGED', workspace: newName });
+        };
+
+        window.copyWorkspaceCode = () => {
+            const temp = document.createElement('textarea');
+            temp.value = currentWorkspaceName;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast(`Nom d'espace "${currentWorkspaceName}" copié !`);
+        };
+
+        function calculateAssetValue(asset) {
+            const cat = categoryMeta[asset.category] || categoryMeta['Immobilier'];
+            if (cat.isUnit) {
+                const q = parseFloat(asset.qty) || 0;
+                const p = parseFloat(asset.price) || 0;
+                return q * p;
+            }
+            return parseFloat(asset.balance) || parseFloat(asset.value) || parseFloat(asset.amount) || 0;
+        }
+
+        function updateCalculatedTotals() {
+            let total = 0;
+            let subImmo = 0, subBourse = 0, subBancaire = 0, subAlt = 0;
+
+            rawAssets.forEach(item => {
+                const val = calculateAssetValue(item);
+                total += val;
+
+                const c = item.category || 'Immobilier';
+                if (c === 'Immobilier') subImmo += val;
+                else if (c === 'Bourse') subBourse += val;
+                else if (c === 'Bancaire') subBancaire += val;
+                else subAlt += val;
+            });
+
+            document.getElementById('total-patrimoine').innerText = formatEUR(total);
+            document.getElementById('subtotal-immobilier').innerText = formatEUR(subImmo);
+            document.getElementById('subtotal-bourse').innerText = formatEUR(subBourse);
+            document.getElementById('subtotal-bancaire').innerText = formatEUR(subBancaire);
+            document.getElementById('subtotal-alternatifs').innerText = formatEUR(subAlt);
+            document.getElementById('asset-count-badge').innerText = `${rawAssets.length} actif(s)`;
+        }
+
+        window.setCategoryFilter = (category) => {
+            activeCategoryFilter = category;
+            
+            ['ALL', 'Bancaire', 'Immobilier', 'Bourse', 'Alternatifs'].forEach(cat => {
+                const btn = document.getElementById(`pill-${cat}`);
+                if (!btn) return;
+                if (cat === category) {
+                    btn.className = "p-4 bg-white border-2 border-indigo-600 rounded-2xl shadow-md text-left transition";
+                } else {
+                    btn.className = "p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-indigo-400 hover:shadow-sm";
+                }
+            });
+
+            renderAssets();
+        };
+
+        window.renderAssets = () => {
+            const tbody = document.getElementById('assets-list-body');
+            const search = (document.getElementById('search-input').value || '').toLowerCase();
+
+            const filtered = rawAssets.filter(a => {
+                const matchesSearch = (a.name || '').toLowerCase().includes(search);
+                const matchesCat = activeCategoryFilter === 'ALL' || (a.category || 'Immobilier') === activeCategoryFilter;
+                return matchesSearch && matchesCat;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                            <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3 font-bold text-xl">
+                                📂
+                            </div>
+                            <h4 class="font-bold text-slate-700 mb-1">Aucun actif trouvé</h4>
+                            <p class="text-xs text-slate-400 mb-4">${rawAssets.length === 0 ? 'Cet espace partagé est encore vide. Ajoutez votre premier actif ci-dessous.' : 'Aucun résultat ne correspond à votre recherche.'}</p>
+                            ${rawAssets.length === 0 ? `<button onclick="openAddModal()" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm hover:bg-indigo-700 transition">+ Ajouter un actif</button>` : ''}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(a => {
+                const cat = categoryMeta[a.category] || categoryMeta['Immobilier'];
+                const totalVal = calculateAssetValue(a);
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors group">
+                        <td class="px-6 py-4 font-bold text-slate-900">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl p-2 bg-slate-100 rounded-xl">${cat.icon}</span>
+                                <span>${escapeHtml(a.name)}</span>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${cat.bg} ${cat.text} ${cat.border} border">
+                                ${cat.label}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4 text-slate-700 font-medium">
+                            ${cat.isUnit ? formatQty(a.qty) + ' unité(s)' : 'Valeur Fixe / Solde'}
+                        </td>
+
+                        <td class="px-6 py-4 text-slate-700">
+                            ${cat.isUnit ? formatEUR(a.price) : '-'}
+                        </td>
+
+                        <td class="px-6 py-4 font-extrabold text-slate-900 text-right text-base">
+                            ${formatEUR(totalVal)}
+                        </td>
+
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-1">
+                                <button onclick="openEditModal('${a.id}')" title="Modifier" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <button onclick="openDeleteModal('${a.id}', '${escapeHtml(a.name)}')" title="Supprimer" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        function escapeHtml(str) {
+            return (str || '').replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        window.toggleCategoryFields = () => {
+            const category = document.getElementById('modal-asset-category').value;
+            const config = categoryMeta[category] || categoryMeta['Immobilier'];
+
+            const unitFields = document.getElementById('unit-fields');
+            const balanceField = document.getElementById('balance-field');
+            const balanceLabel = document.getElementById('balance-label');
+
+            if (config.isUnit) {
+                unitFields.classList.remove('hidden');
+                balanceField.classList.add('hidden');
+            } else {
+                unitFields.classList.add('hidden');
+                balanceField.classList.remove('hidden');
+                balanceLabel.innerText = config.labelBalance || 'Valeur estimée (€)';
             }
         };
 
-        // Exposé sur window car appelé depuis un attribut onclick dans le HTML injecté
-        window.deleteAsset = async (docId) => {
-            if (!userUid) return;
+        window.openAddModal = () => {
+            document.getElementById('modal-title').innerText = "Ajouter un actif";
+            document.getElementById('modal-submit-btn').innerText = "Enregistrer";
+            document.getElementById('modal-asset-id').value = "";
+            document.getElementById('modal-asset-name').value = "";
+            document.getElementById('modal-asset-category').value = "Immobilier";
+            document.getElementById('modal-asset-qty').value = "";
+            document.getElementById('modal-asset-price').value = "";
+            document.getElementById('modal-asset-balance').value = "";
+            
+            toggleCategoryFields();
+            document.getElementById('asset-modal').classList.remove('hidden');
+        };
+
+        window.openEditModal = (id) => {
+            const asset = rawAssets.find(a => a.id === id);
+            if (!asset) return;
+
+            document.getElementById('modal-title').innerText = "Modifier l'actif";
+            document.getElementById('modal-submit-btn').innerText = "Mettre à jour";
+            document.getElementById('modal-asset-id').value = asset.id;
+            document.getElementById('modal-asset-name').value = asset.name || "";
+            document.getElementById('modal-asset-category').value = asset.category || "Immobilier";
+            document.getElementById('modal-asset-qty').value = asset.qty || "";
+            document.getElementById('modal-asset-price').value = asset.price || "";
+            document.getElementById('modal-asset-balance').value = asset.balance || asset.value || asset.amount || "";
+
+            toggleCategoryFields();
+            document.getElementById('asset-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => {
+            document.getElementById('asset-modal').classList.add('hidden');
+        };
+
+        window.handleFormSubmit = async (event) => {
+            event.preventDefault();
+            await ensureAuthenticated();
+            if (!auth.currentUser) return;
+
+            const id = document.getElementById('modal-asset-id').value;
+            const name = document.getElementById('modal-asset-name').value.trim();
+            const category = document.getElementById('modal-asset-category').value;
+            const config = categoryMeta[category] || categoryMeta['Immobilier'];
+
+            if (!name) return;
+
+            const assetData = {
+                name,
+                category,
+                updatedAt: Date.now()
+            };
+
+            if (config.isUnit) {
+                assetData.qty = parseFloat(document.getElementById('modal-asset-qty').value) || 0;
+                assetData.price = parseFloat(document.getElementById('modal-asset-price').value) || 0;
+            } else {
+                assetData.balance = parseFloat(document.getElementById('modal-asset-balance').value) || 0;
+                assetData.value = assetData.balance;
+            }
+
+            const cleanSlug = sanitizeWorkspaceName(currentWorkspaceName);
+            const publicCollectionName = `portfolio_${cleanSlug}`;
+
             try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', userUid, 'stocks', docId));
-                notify('Actif retiré du portefeuille.');
+                if (id) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', publicCollectionName, id);
+                    await updateDoc(docRef, assetData);
+                    showToast("Actif mis à jour et synchronisé !");
+                } else {
+                    assetData.createdAt = Date.now();
+                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', publicCollectionName);
+                    await addDoc(colRef, assetData);
+                    showToast("Actif ajouté et synchronisé en direct !");
+                }
+                closeModal();
             } catch (err) {
-                console.error(err);
-                notify('Erreur lors de la suppression.', true);
+                console.error("Save error:", err);
+                showToast("Erreur lors de l'enregistrement", "error");
             }
         };
+
+        window.openDeleteModal = (id, name) => {
+            assetToDeleteId = id;
+            document.getElementById('delete-asset-name').innerText = `"${name}"`;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        };
+
+        window.closeDeleteModal = () => {
+            assetToDeleteId = null;
+            document.getElementById('delete-modal').classList.add('hidden');
+        };
+
+        window.confirmDeleteAsset = async () => {
+            if (!assetToDeleteId) return;
+            await ensureAuthenticated();
+            if (!auth.currentUser) return;
+
+            const cleanSlug = sanitizeWorkspaceName(currentWorkspaceName);
+            const publicCollectionName = `portfolio_${cleanSlug}`;
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', publicCollectionName, assetToDeleteId);
+                await deleteDoc(docRef);
+                showToast("Actif supprimé et synchronisé partout");
+                closeDeleteModal();
+            } catch (err) {
+                console.error("Delete error:", err);
+                showToast("Erreur lors de la suppression", "error");
+            }
+        };
+
+        // Close modals on background click
+        document.getElementById('asset-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('asset-modal')) closeModal();
+        });
+        document.getElementById('delete-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('delete-modal')) closeDeleteModal();
+        });
+        document.getElementById('workspace-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('workspace-modal')) closeWorkspaceModal();
+        });
+
+        // Initialize default workspace subscription on startup
+        ensureAuthenticated().then(() => {
+            subscribeToWorkspace(currentWorkspaceName);
+        });
     </script>
 </body>
 </html>
