@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WealthManager Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-effect { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <header class="glass-effect border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2 rounded-lg shadow-md shadow-indigo-200">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                </div>
+                <h1 class="text-xl font-bold text-slate-900 tracking-tight">WealthManager</h1>
+            </div>
+            <div id="headerAuth" class="flex items-center gap-4">
+                <div id="authStatus" class="flex items-center gap-2 text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1.5 rounded-full">
+                    <div class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></div>
+                    Chargement...
+                </div>
+                <button id="deleteAccountBtn" class="hidden text-sm font-semibold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-lg hover:bg-rose-100 transition-colors">Supprimer mon compte</button>
+                <button id="logoutBtn" class="hidden text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">Déconnexion</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-8 relative">
+        <div id="messageBox" class="hidden mb-6 p-4 rounded-xl border flex items-center justify-between shadow-sm transition-all duration-300">
+            <span id="messageText" class="font-medium"></span>
+            <button onclick="document.getElementById('messageBox').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">✕</button>
+        </div>
+
+        <section id="loginSection" class="hidden max-w-md mx-auto mt-12 bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center">
+            <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-600">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Bienvenue</h2>
+            <p class="text-slate-500 text-sm mb-6">Connectez-vous ou créez un compte. Une vérification par e-mail sera requise.</p>
+            
+            <form id="loginForm" class="space-y-4">
+                <input type="email" id="loginEmail" required placeholder="votre@email.com" class="w-full p-3 text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                <input type="password" id="loginPassword" required placeholder="Mot de passe (6 car. min)" minlength="6" class="w-full p-3 text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                
+                <div class="flex gap-3 pt-2">
+                    <button type="button" id="registerBtn" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all">S'inscrire</button>
+                    <button type="submit" id="loginBtn" class="w-1/2 bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2">
+                        Connexion
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <div id="appSection" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Formulaire d'ajout -->
+            <section class="lg:col-span-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-28">
+                    <h2 class="text-lg font-bold text-slate-900 mb-6">Ajouter un actif</h2>
+                    <form id="assetForm" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Type</label>
+                            <select id="assetType" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                <option value="Action">Actions & Bourse</option>
+                                <option value="Immobilier">Immobilier</option>
+                                <option value="Montre">Montres de luxe</option>
+                                <option value="Crypto">Crypto-monnaies</option>
+                                <option value="Autre">Autres actifs</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nom de l'actif</label>
+                            <input type="text" id="symbol" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ex: LVMH, Rolex Daytona">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Qté</label>
+                                <input type="number" id="qty" required step="any" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Prix (€)</label>
+                                <input type="number" id="price" required step="0.01" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                        </div>
+                        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-200">
+                            Ajouter au portefeuille
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <section class="lg:col-span-8">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <h2 class="font-bold text-slate-900 text-lg">Portefeuille Actuel</h2>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium text-slate-500">Valorisation globale</span>
+                            <div id="totalValue" class="text-indigo-600 font-bold bg-indigo-50 px-4 py-2 rounded-xl text-lg tracking-tight">0.00 €</div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-400 uppercase bg-slate-50/50 border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-4">Actif</th>
+                                    <th class="px-6 py-4 text-right">Qté</th>
+                                    <th class="px-6 py-4 text-right">Prix Unitaire</th>
+                                    <th class="px-6 py-4 text-right">Valeur Totale</th>
+                                    <th class="px-6 py-4 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetsBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                        <div id="emptyState" class="hidden p-12 text-center text-slate-400">
+                            Aucun actif dans votre portefeuille. Ajoutez-en un pour commencer !
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC44TI-kF0B-E999nxSq0mpn5me6Ncay4s",
+            authDomain: "solution-client-c9f55.firebaseapp.com",
+            projectId: "solution-client-c9f55",
+            storageBucket: "solution-client-c9f55.firebasestorage.app",
+            messagingSenderId: "1050759897620",
+            appId: "1:1050759897620:web:831df2028dcf846e287d01"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Configuration de l'AppID pour respecter la structure stricte des chemins
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wealth-manager-app';
+        let userUid = null;
+        let unsubscribeSnapshot = null;
+        let isRegistering = false; // Variable de sécurité pendant l'inscription
+
+        // Éléments du DOM
+        const loginSection = document.getElementById('loginSection');
+        const appSection = document.getElementById('appSection');
+        const authStatus = document.getElementById('authStatus');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+        const assetForm = document.getElementById('assetForm');
+        const assetsBody = document.getElementById('assetsBody');
+        const totalValueEl = document.getElementById('totalValue');
+        const emptyState = document.getElementById('emptyState');
+
+        const notify = (msg, isErr = false) => {
+            const box = document.getElementById('messageBox');
+            box.classList.remove('hidden', 'bg-green-50', 'text-green-800', 'bg-red-50', 'text-red-800', 'border-green-200', 'border-red-200');
+            box.classList.add(isErr ? 'bg-red-50' : 'bg-green-50', isErr ? 'text-red-800' : 'text-green-800', isErr ? 'border-red-200' : 'border-green-200');
+            document.getElementById('messageText').textContent = msg;
+            setTimeout(() => box.classList.add('hidden'), 5000);
+        };
+
+        const fmt = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
+
+        // 1. Connexion (Login)
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('loginBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span>...';
+            btn.disabled = true;
+
+            try {
+                // La validation du statut (Approuvé ou non) se fera automatiquement dans onAuthStateChanged
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                console.error(error);
+                let msg = "Erreur de connexion. Vérifiez vos identifiants.";
+                if (error.code === 'auth/invalid-credential') msg = "E-mail ou mot de passe incorrect.";
+                notify(msg, true);
+                
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        // 2. Inscription (Sign Up) - Attente d'approbation manuelle
+        document.getElementById('registerBtn').onclick = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('registerBtn');
+
+            if (!email || !password) {
+                notify("Veuillez renseigner l'e-mail et le mot de passe pour vous inscrire.", true);
+                return;
+            }
+            if (password.length < 6) {
+                notify("Le mot de passe doit contenir au moins 6 caractères.", true);
+                return;
+            }
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Création...';
+            btn.disabled = true;
+            isRegistering = true; // Empêche onAuthStateChanged d'interférer pendant l'écriture
+
+            try {
+                // Création du compte
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const userUid = userCredential.user.uid;
+                
+                // --- ENREGISTREMENT AVEC STATUT "En attente" ---
+                await setDoc(doc(db, 'artifacts', appId, 'users', userUid), {
+                    email: email,
+                    dateInscription: new Date().toLocaleString('fr-FR'),
+                    statut: "En attente", // <- C'est ce statut que vous devrez modifier !
+                    derniereConnexion: "-"
+                });
+                
+                // On déconnecte l'utilisateur immédiatement pour le bloquer
+                await signOut(auth);
+                
+                notify('✨ Demande envoyée ! Vous devez attendre que l\'administrateur approuve votre compte.');
+                document.getElementById('loginForm').reset();
+            } catch (error) {
+                console.error(error);
+                let msg = "Erreur lors de l'inscription.";
+                if (error.code === 'auth/email-already-in-use') msg = "Cette adresse e-mail est déjà en attente ou utilisée.";
+                notify(msg, true);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                isRegistering = false;
+            }
+        };
+
+        logoutBtn.onclick = () => signOut(auth);
+
+        // --- Logique de suppression de compte ---
+        deleteAccountBtn.onclick = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            // Système de double clic pour confirmer (remplace la fenêtre de confirmation classique)
+            if (deleteAccountBtn.dataset.confirm !== "true") {
+                deleteAccountBtn.dataset.confirm = "true";
+                deleteAccountBtn.innerText = "Sûr ? (Cliquez pour confirmer)";
+                deleteAccountBtn.classList.replace('bg-rose-50', 'bg-rose-600');
+                deleteAccountBtn.classList.replace('text-rose-700', 'text-white');
+                
+                // Réinitialiser le bouton après 4 secondes si l'utilisateur ne confirme pas
+                setTimeout(() => {
+                    deleteAccountBtn.dataset.confirm = "false";
+                    deleteAccountBtn.innerText = "Supprimer mon compte";
+                    deleteAccountBtn.classList.replace('bg-rose-600', 'bg-rose-50');
+                    deleteAccountBtn.classList.replace('text-white', 'text-rose-700');
+                }, 4000);
+                return;
+            }
+
+            try {
+                deleteAccountBtn.innerText = "Suppression...";
+                deleteAccountBtn.disabled = true;
+
+                // 1. D'abord : Supprimer le profil utilisateur dans Firestore
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid));
+                
+                // (Note : Dans un vrai projet de production, il faudrait aussi boucler sur la sous-collection 'stocks' pour tout effacer, 
+                // mais effacer le document principal rend l'accès au compte impossible).
+
+                // 2. Ensuite : Supprimer le compte système (Authentification)
+                await deleteUser(user);
+                
+                // Si réussi, Firebase déclenche onAuthStateChanged et déconnecte l'utilisateur
+                notify('Votre compte et vos données ont été supprimés définitivement.');
+            } catch (error) {
+                console.error(error);
+                // Si l'utilisateur s'est connecté il y a trop longtemps, Firebase exige une reconnexion par sécurité
+                if (error.code === 'auth/requires-recent-login') {
+                    notify("Par sécurité, veuillez vous déconnecter puis vous reconnecter avant de supprimer votre compte.", true);
+                } else {
+                    notify("Erreur lors de la suppression du compte.", true);
+                }
+                
+                // Réinitialiser le bouton en cas d'erreur
+                deleteAccountBtn.dataset.confirm = "false";
+                deleteAccountBtn.innerText = "Supprimer mon compte";
+                deleteAccountBtn.classList.replace('bg-rose-600', 'bg-rose-50');
+                deleteAccountBtn.classList.replace('text-white', 'text-rose-700');
+                deleteAccountBtn.disabled = false;
+            }
+        };
+        // ----------------------------------------
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Si l'utilisateur est en plein processus d'inscription, on ignore cet évènement
+                if (isRegistering) return;
+
+                // --- VÉRIFICATION DU STATUT PAR L'ADMINISTRATEUR ---
+                try {
+                    const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid));
+                    
+                    if (userDoc.exists() && userDoc.data().statut === "Approuvé") {
+                        // UTILISATEUR APPROUVÉ ! On lui donne l'accès.
+                        userUid = user.uid;
+                        loginSection.classList.add('hidden');
+                        appSection.classList.remove('hidden');
+                        logoutBtn.classList.remove('hidden');
+                        deleteAccountBtn.classList.remove('hidden');
+                        
+                        authStatus.innerHTML = `
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+                            <span class="truncate max-w-[150px]" title="${user.email}">${user.email}</span>
+                        `;
+
+                        // Mise à jour de la dernière connexion
+                        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid), {
+                            derniereConnexion: new Date().toLocaleString('fr-FR')
+                        }, { merge: true });
+
+                        // Réinitialiser le bouton de connexion s'il tournait encore
+                        const btn = document.getElementById('loginBtn');
+                        if (btn) {
+                            btn.innerHTML = 'Connexion';
+                            btn.disabled = false;
+                        }
+
+                        // Charger les données de l'utilisateur
+                        loadUserData();
+                        notify("Connexion réussie ! Bienvenue.");
+                    } else {
+                        // UTILISATEUR NON APPROUVÉ (Statut "En attente" ou autre)
+                        await signOut(auth);
+                        notify("Accès refusé : Votre compte est en attente de validation par l'administrateur.", true);
+                        
+                        // Réinitialiser le bouton de connexion
+                        const btn = document.getElementById('loginBtn');
+                        if (btn) {
+                            btn.innerHTML = 'Connexion';
+                            btn.disabled = false;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erreur de vérification des droits:", error);
+                    await signOut(auth);
+                    notify("Erreur lors de la vérification de vos droits d'accès.", true);
+                }
+            } else {
+                // Utilisateur Déconnecté (ou refusé)
+                userUid = null;
+                loginSection.classList.remove('hidden');
+                appSection.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+                deleteAccountBtn.classList.add('hidden');
+                
+                authStatus.innerHTML = `
+                    <div class="w-2 h-2 rounded-full bg-slate-400"></div>
+                    Non connecté
+                `;
+                
+                // Nettoyer l'interface
+                assetsBody.innerHTML = '';
+                totalValueEl.textContent = '0.00 €';
+                if (unsubscribeSnapshot) {
+                    unsubscribeSnapshot();
+                }
+                
+                // Nettoyer les champs de connexion
+                if (document.getElementById('loginForm')) {
+                   document.getElementById('loginForm').reset();
+                }
+            }
+        });
+
+        function loadUserData() {
+            if (!userUid) return;
+            
+            // Chemin strict respectant la consigne "artifacts/{appId}/users/{userId}/collection"
+            const stocksRef = collection(db, 'artifacts', appId, 'users', userUid, 'stocks');
+            
+            unsubscribeSnapshot = onSnapshot(stocksRef, (snap) => {
+                let total = 0;
+                assetsBody.innerHTML = '';
+                
+                if (snap.empty) {
+                    emptyState.classList.remove('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                }
+
+                snap.forEach((d) => {
+                    const data = d.data();
+                    const val = data.qty * data.price;
+                    total += val;
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition-colors group";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-semibold text-slate-800">
+                            ${data.symbol}
+                            <span class="block mt-1 text-[10px] text-slate-400 uppercase font-bold tracking-wider">${data.type}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right text-slate-600">${data.qty}</td>
+                        <td class="px-6 py-4 text-right text-slate-600">${fmt(data.price)}</td>
+                        <td class="px-6 py-4 text-right font-bold text-slate-900">${fmt(val)}</td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="deleteAsset('${d.id}')" class="text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 p-2">
+                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    `;
+                    assetsBody.appendChild(tr);
+                });
+                
+                // Animation simple de mise à jour du total
+                totalValueEl.style.transform = 'scale(1.05)';
+                totalValueEl.textContent = fmt(total);
+                setTimeout(() => totalValueEl.style.transform = 'scale(1)', 200);
+            }, (error) => {
+                console.error("Erreur de lecture :", error);
+                notify("Erreur lors du chargement de vos données.", true);
+            });
+        }
+
+        assetForm.onsubmit = async (e) => {
+            e.preventDefault();
+            if (!userUid) return;
+
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerText;
+            btn.innerText = 'Ajout en cours...';
+            btn.disabled = true;
+
+            try {
+                const stocksRef = collection(db, 'artifacts', appId, 'users', userUid, 'stocks');
+                await addDoc(stocksRef, {
+                    type: document.getElementById('assetType').value,
+                    symbol: document.getElementById('symbol').value,
+                    qty: parseFloat(document.getElementById('qty').value),
+                    price: parseFloat(document.getElementById('price').value),
+                    timestamp: new Date()
+                });
+                notify('Actif ajouté avec succès.');
+                assetForm.reset();
+                document.getElementById('symbol').focus();
+            } catch (err) { 
+                console.error(err);
+                notify('Erreur lors de l\'ajout : ' + err.message, true); 
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        // Exposé sur window car appelé depuis un attribut onclick dans le HTML injecté
+        window.deleteAsset = async (docId) => {
+            if (!userUid) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', userUid, 'stocks', docId));
+                notify('Actif retiré du portefeuille.');
+            } catch (err) {
+                console.error(err);
+                notify('Erreur lors de la suppression.', true);
+            }
+        };
+    </script>
+</body>
+</html>
