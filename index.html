@@ -35,8 +35,14 @@
 
             <!-- User Status & Auth Buttons -->
             <div class="flex items-center gap-3">
+                <!-- Admin Button (visible only to Admin) -->
+                <button id="btn-admin-panel" onclick="openAdminModal()" class="hidden text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                    <span>👑</span> Administration
+                    <span id="pending-count-badge" class="hidden bg-amber-600 text-white rounded-full px-1.5 py-0.2 text-[10px] font-extrabold">0</span>
+                </button>
+
                 <div id="auth-status" class="hidden sm:flex items-center gap-2 text-xs bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 font-medium">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span id="user-id-display">Connecté</span>
                 </div>
                 <button id="btn-logout" onclick="handleLogout()" class="hidden text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-1.5 rounded-xl transition">
@@ -55,13 +61,13 @@
                     🔒
                 </div>
                 <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Espace Privé</h2>
-                <p class="text-slate-500 text-sm mt-2">Connectez-vous pour accéder à votre patrimoine sécurisé.</p>
+                <p class="text-slate-500 text-sm mt-2">Accès sécurisé sur validation préalable de l'administrateur.</p>
             </div>
 
             <!-- Auth Tabs -->
             <div class="flex border-b border-slate-200 mb-6 text-sm font-semibold">
                 <button id="tab-login-btn" onclick="switchAuthTab('login')" class="w-1/2 py-2 border-b-2 border-indigo-600 text-indigo-600 transition">Connexion</button>
-                <button id="tab-signup-btn" onclick="switchAuthTab('signup')" class="w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition">S'inscrire</button>
+                <button id="tab-signup-btn" onclick="switchAuthTab('signup')" class="w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition">Demander un compte</button>
             </div>
 
             <form id="loginForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
@@ -74,20 +80,71 @@
                     <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition">
                 </div>
                 
+                <div id="signup-info-banner" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                    ℹ️ <strong>Note :</strong> Votre demande de création de compte sera soumise à la validation manuelle de l'administrateur avant de pouvoir accéder au patrimoine.
+                </div>
+
                 <button type="submit" id="authSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-slate-200 text-sm active:scale-95">
                     Se connecter
                 </button>
             </form>
 
             <div class="mt-6 pt-6 border-t border-slate-100 text-center">
-                <p class="text-xs text-slate-400 mb-3">Ou accédez directement en mode démonstration :</p>
+                <p class="text-xs text-slate-400 mb-3">Ou testez directement l'interface :</p>
                 <button onclick="handleDemoLogin()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
                     <span>🚀</span> Accès Démo Rapide (Invité)
                 </button>
             </div>
         </section>
 
-        <!-- Dashboard Section (Shown when logged in) -->
+        <!-- Pending Approval Section (Shown when logged in but status === 'pending') -->
+        <section id="pendingSection" class="hidden max-w-lg mx-auto my-12 bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border border-amber-100 text-center animate-fade-in">
+            <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-5 font-bold text-3xl">
+                ⏳
+            </div>
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Compte en attente de validation</h2>
+            <p class="text-slate-600 text-sm mb-6 leading-relaxed">
+                Votre inscription a bien été enregistrée. Pour des raisons de sécurité, un administrateur doit valider votre accès avant que vous puissiez accéder au tableau de bord.
+            </p>
+
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-left text-xs space-y-2 mb-6">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Compte :</span>
+                    <span id="pending-user-email" class="font-semibold text-slate-800">-</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Statut :</span>
+                    <span class="inline-flex items-center gap-1 font-bold text-amber-600">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span> En attente d'approbation
+                    </span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="checkUserApprovalStatus()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition text-sm shadow-md">
+                    🔄 Vérifier le statut
+                </button>
+                <button onclick="handleLogout()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition text-sm">
+                    Se déconnecter
+                </button>
+            </div>
+        </section>
+
+        <!-- Access Rejected Section -->
+        <section id="rejectedSection" class="hidden max-w-lg mx-auto my-12 bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border border-red-100 text-center animate-fade-in">
+            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5 font-bold text-3xl">
+                🚫
+            </div>
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Accès Non Autorisé</h2>
+            <p class="text-slate-600 text-sm mb-6">
+                Votre demande de création de compte n'a pas été retenue par l'administrateur.
+            </p>
+            <button onclick="handleLogout()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 py-3 rounded-xl transition text-sm">
+                Retour à la connexion
+            </button>
+        </section>
+
+        <!-- Dashboard Section (Shown when logged in AND approved) -->
         <div id="dashboardSection" class="hidden space-y-8 animate-fade-in">
             
             <!-- Hero Consolidated Net Worth Card -->
@@ -179,7 +236,7 @@
                     </div>
 
                     <div class="text-xs font-medium text-slate-500">
-                        Mis à jour en temps réel via Firestore
+                        Données synchronisées en temps réel
                     </div>
                 </div>
 
@@ -209,6 +266,46 @@
         </div>
     </main>
 
+    <!-- Modal: Admin Panel (Approve/Reject users) -->
+    <div id="admin-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 transform transition-all animate-fade-in">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">👑</span>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900">Administration - Gestion des Accès</h3>
+                        <p class="text-xs text-slate-500">Validez ou refusez l'accès des utilisateurs inscrits</p>
+                    </div>
+                </div>
+                <button onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="max-h-96 overflow-y-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-200 sticky top-0">
+                        <tr>
+                            <th class="p-3 font-semibold">Email</th>
+                            <th class="p-3 font-semibold">Rôle</th>
+                            <th class="p-3 font-semibold">Statut</th>
+                            <th class="p-3 font-semibold text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-list" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="4" class="p-6 text-center text-slate-400">Chargement de la liste des utilisateurs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 text-right">
+                <button onclick="closeAdminModal()" class="px-5 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl">Fermer</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Add / Edit Asset -->
     <div id="asset-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 transform transition-all animate-fade-in">
@@ -237,7 +334,7 @@
                     </select>
                 </div>
 
-                <!-- Unit-based assets (Stocks, Crypto, Qty x Price) -->
+                <!-- Unit-based assets -->
                 <div id="unit-fields" class="grid grid-cols-2 gap-3 hidden">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Quantité</label>
@@ -249,7 +346,7 @@
                     </div>
                 </div>
 
-                <!-- Direct valuation/balance assets (Real Estate, Savings) -->
+                <!-- Direct valuation/balance assets -->
                 <div id="balance-field">
                     <label id="balance-label" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Valeur estimée (€)</label>
                     <div class="relative">
@@ -294,10 +391,11 @@
     <!-- Toast Notification Box -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
+    <!-- JavaScript Logic & Firebase module integration -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global environment bindings
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'solution-client-c9f55';
@@ -312,10 +410,14 @@
         const db = getFirestore(app);
 
         let rawAssets = [];
+        let allUsersList = [];
         let activeCategoryFilter = 'ALL';
         let assetToDeleteId = null;
         let currentUser = null;
+        let currentUserProfile = null;
         let authMode = 'login'; // 'login' or 'signup'
+        let unsubscribeUserStatus = null;
+        let unsubscribeAdminUsers = null;
 
         const categoryMeta = {
             'Immobilier': { label: 'Immobilier', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: '🏠', isUnit: false, labelBalance: 'Valeur du bien (€)' },
@@ -344,62 +446,165 @@
             }, 3500);
         }
 
-        // Authentication state observer
         onAuthStateChanged(auth, async (user) => {
+            if (unsubscribeUserStatus) {
+                unsubscribeUserStatus();
+                unsubscribeUserStatus = null;
+            }
+
             if (user) {
                 currentUser = user;
                 document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.remove('hidden');
                 document.getElementById('auth-status').classList.remove('hidden');
                 document.getElementById('btn-logout').classList.remove('hidden');
                 document.getElementById('user-id-display').innerText = user.email || `ID: ${user.uid.substring(0, 8)}`;
+                document.getElementById('pending-user-email').innerText = user.email || user.uid;
 
-                // Subscribe to realtime user assets
-                const assetsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'assets');
-                onSnapshot(assetsRef, (snapshot) => {
-                    rawAssets = [];
-                    snapshot.forEach((doc) => {
-                        rawAssets.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
+                // Monitor User Profile document in public collection for real-time approval status updates
+                const userProfileRef = doc(db, 'artifacts', appId, 'public', 'data', 'userProfiles', user.uid);
+                
+                unsubscribeUserStatus = onSnapshot(userProfileRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        currentUserProfile = docSnap.data();
+                    } else {
+                        // Profile missing, create standard pending or admin profile
+                        currentUserProfile = {
+                            email: user.email || 'Invite@demo.com',
+                            role: 'user',
+                            status: 'pending',
+                            createdAt: Date.now()
+                        };
+                        setDoc(userProfileRef, currentUserProfile, { merge: true });
+                    }
 
-                    rawAssets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                    updateCalculatedTotals();
-                    renderAssets();
-                }, (error) => {
-                    console.error("Firestore sync error:", error);
-                    showToast("Erreur de synchronisation", "error");
+                    handleAccessControl(currentUserProfile);
+                }, (err) => {
+                    console.error("Error fetching user status:", err);
+                    showToast("Erreur lors de la vérification de vos droits", "error");
                 });
+
             } else {
                 currentUser = null;
+                currentUserProfile = null;
                 document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('pendingSection').classList.add('hidden');
+                document.getElementById('rejectedSection').classList.add('hidden');
                 document.getElementById('dashboardSection').classList.add('hidden');
                 document.getElementById('auth-status').classList.add('hidden');
                 document.getElementById('btn-logout').classList.add('hidden');
+                document.getElementById('btn-admin-panel').classList.add('hidden');
             }
         });
 
-        // Switch Auth Tab
+        function handleAccessControl(profile) {
+            const statusDot = document.getElementById('status-dot');
+            const adminBtn = document.getElementById('btn-admin-panel');
+
+            // Toggle admin features
+            if (profile.role === 'admin') {
+                adminBtn.classList.remove('hidden');
+                listenToAllUsersForAdmin();
+            } else {
+                adminBtn.classList.add('hidden');
+            }
+
+            if (profile.status === 'approved') {
+                statusDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                document.getElementById('pendingSection').classList.add('hidden');
+                document.getElementById('rejectedSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+
+                // Subscribe to user assets
+                subscribeToUserAssets();
+            } else if (profile.status === 'rejected') {
+                statusDot.className = "w-2 h-2 rounded-full bg-red-500";
+                document.getElementById('pendingSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.add('hidden');
+                document.getElementById('rejectedSection').classList.remove('hidden');
+            } else {
+                // Pending status
+                statusDot.className = "w-2 h-2 rounded-full bg-amber-500 animate-ping";
+                document.getElementById('dashboardSection').classList.add('hidden');
+                document.getElementById('rejectedSection').classList.add('hidden');
+                document.getElementById('pendingSection').classList.remove('hidden');
+            }
+        }
+
+        window.checkUserApprovalStatus = () => {
+            if (currentUserProfile && currentUserProfile.status === 'approved') {
+                showToast("Accès validé ! Chargement du tableau de bord...");
+            } else {
+                showToast("Votre compte est toujours en attente de validation", "error");
+            }
+        };
+
+        function subscribeToUserAssets() {
+            if (!currentUser) return;
+            const assetsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'assets');
+            onSnapshot(assetsRef, (snapshot) => {
+                rawAssets = [];
+                snapshot.forEach((doc) => {
+                    rawAssets.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                rawAssets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                updateCalculatedTotals();
+                renderAssets();
+            }, (error) => {
+                console.error("Firestore sync error:", error);
+                showToast("Erreur de synchronisation", "error");
+            });
+        }
+
+        function listenToAllUsersForAdmin() {
+            if (unsubscribeAdminUsers) return;
+
+            const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'userProfiles');
+            unsubscribeAdminUsers = onSnapshot(usersRef, (snapshot) => {
+                allUsersList = [];
+                let pendingCount = 0;
+
+                snapshot.forEach((docSnap) => {
+                    const uData = { uid: docSnap.id, ...docSnap.data() };
+                    allUsersList.push(uData);
+                    if (uData.status === 'pending') pendingCount++;
+                });
+
+                const badge = document.getElementById('pending-count-badge');
+                if (pendingCount > 0) {
+                    badge.innerText = pendingCount;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+
+                renderAdminUsersTable();
+            });
+        }
+
         window.switchAuthTab = (mode) => {
             authMode = mode;
             const loginBtn = document.getElementById('tab-login-btn');
             const signupBtn = document.getElementById('tab-signup-btn');
             const submitBtn = document.getElementById('authSubmitBtn');
+            const infoBanner = document.getElementById('signup-info-banner');
 
             if (mode === 'login') {
                 loginBtn.className = "w-1/2 py-2 border-b-2 border-indigo-600 text-indigo-600 transition";
                 signupBtn.className = "w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition";
                 submitBtn.innerText = "Se connecter";
+                infoBanner.classList.add('hidden');
             } else {
                 signupBtn.className = "w-1/2 py-2 border-b-2 border-indigo-600 text-indigo-600 transition";
                 loginBtn.className = "w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition";
-                submitBtn.innerText = "Créer un compte";
+                submitBtn.innerText = "Soumettre ma demande d'accès";
+                infoBanner.classList.remove('hidden');
             }
         };
 
-        // Auth Submit handler
         window.handleAuthSubmit = async (event) => {
             event.preventDefault();
             const email = document.getElementById('loginEmail').value;
@@ -407,35 +612,69 @@
             const btn = document.getElementById('authSubmitBtn');
 
             btn.disabled = true;
-            btn.innerText = "Traitement...";
+            btn.innerText = "Traitement en cours...";
 
             try {
                 if (authMode === 'login') {
                     await signInWithEmailAndPassword(auth, email, password);
                     showToast("Connexion réussie !");
                 } else {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                    showToast("Compte créé avec succès !");
+                    // Check if any users exist in the system yet
+                    const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'userProfiles');
+                    const existingUsersSnap = await getDocs(usersRef);
+                    const isFirstUser = existingUsersSnap.empty;
+
+                    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                    const newUid = userCred.user.uid;
+
+                    // Create user profile in public collection with pending or admin role
+                    const newProfile = {
+                        email: email,
+                        role: isFirstUser ? 'admin' : 'user',
+                        status: isFirstUser ? 'approved' : 'pending',
+                        createdAt: Date.now()
+                    };
+
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'userProfiles', newUid), newProfile);
+
+                    if (isFirstUser) {
+                        showToast("Compte administrateur créé et validé !");
+                    } else {
+                        showToast("Demande transmise ! Votre compte est en attente de validation.");
+                    }
                 }
             } catch (err) {
                 console.error("Auth error:", err);
                 showToast(err.message || "Identifiants incorrects ou accès refusé", "error");
             } finally {
                 btn.disabled = false;
-                btn.innerText = authMode === 'login' ? "Se connecter" : "Créer un compte";
+                btn.innerText = authMode === 'login' ? "Se connecter" : "Soumettre ma demande d'accès";
             }
         };
 
-        // Quick Guest Login
         window.handleDemoLogin = async () => {
             try {
+                let userCred;
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                    userCred = await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    await signInAnonymously(auth);
+                    userCred = await signInAnonymously(auth);
                 }
+
+                if (userCred && userCred.user) {
+                    // Ensure guest/demo profile is marked as approved automatically
+                    const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'userProfiles', userCred.user.uid);
+                    await setDoc(profileRef, {
+                        email: 'demo@guest.com',
+                        role: 'user',
+                        status: 'approved',
+                        createdAt: Date.now()
+                    }, { merge: true });
+                }
+
                 showToast("Accès démo activé !");
             } catch (e) {
+                console.error("Demo login error:", e);
                 showToast("Impossible d'activer le mode démo", "error");
             }
         };
@@ -443,6 +682,77 @@
         window.handleLogout = async () => {
             await signOut(auth);
             showToast("Déconnecté avec succès");
+        };
+
+        window.openAdminModal = () => {
+            renderAdminUsersTable();
+            document.getElementById('admin-modal').classList.remove('hidden');
+        };
+
+        window.closeAdminModal = () => {
+            document.getElementById('admin-modal').classList.add('hidden');
+        };
+
+        function renderAdminUsersTable() {
+            const tbody = document.getElementById('admin-users-list');
+            if (!tbody) return;
+
+            if (allUsersList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">Aucun utilisateur enregistré.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = allUsersList.map(u => {
+                const isCurrent = currentUser && currentUser.uid === u.uid;
+                let statusBadge = '';
+                if (u.status === 'approved') {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Approuvé</span>`;
+                } else if (u.status === 'rejected') {
+                    statusBadge = `<span class="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Refusé</span>`;
+                } else {
+                    statusBadge = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">En attente</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-semibold text-slate-800">
+                            ${escapeHtml(u.email || u.uid)}
+                            ${isCurrent ? ' <span class="text-[10px] text-indigo-600 font-bold">(Vous)</span>' : ''}
+                        </td>
+                        <td class="p-3 text-xs font-medium text-slate-500 uppercase">
+                            ${u.role === 'admin' ? '👑 Admin' : 'Utilisateur'}
+                        </td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 text-center">
+                            ${isCurrent ? '<span class="text-xs text-slate-400">-</span>' : `
+                                <div class="flex items-center justify-center gap-1">
+                                    ${u.status !== 'approved' ? `
+                                        <button onclick="updateUserStatus('${u.uid}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-2.5 py-1 rounded-lg transition shadow-sm">
+                                            ✓ Valider
+                                        </button>
+                                    ` : ''}
+                                    ${u.status !== 'rejected' ? `
+                                        <button onclick="updateUserStatus('${u.uid}', 'rejected')" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-lg transition">
+                                            ✕ Refuser
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.updateUserStatus = async (uid, newStatus) => {
+            try {
+                const uRef = doc(db, 'artifacts', appId, 'public', 'data', 'userProfiles', uid);
+                await updateDoc(uRef, { status: newStatus });
+                showToast(newStatus === 'approved' ? "Accès validé avec succès !" : "Demande refusée.");
+            } catch (err) {
+                console.error("Failed to update status:", err);
+                showToast("Erreur lors de la mise à jour du statut", "error");
+            }
         };
 
         function calculateAssetValue(asset) {
@@ -481,7 +791,6 @@
         window.setCategoryFilter = (category) => {
             activeCategoryFilter = category;
             
-            // Highlight current pill
             ['ALL', 'Bancaire', 'Immobilier', 'Bourse', 'Alternatifs'].forEach(cat => {
                 const btn = document.getElementById(`pill-${cat}`);
                 if (!btn) return;
@@ -700,6 +1009,9 @@
         });
         document.getElementById('delete-modal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('delete-modal')) closeDeleteModal();
+        });
+        document.getElementById('admin-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('admin-modal')) closeAdminModal();
         });
     </script>
 </body>
