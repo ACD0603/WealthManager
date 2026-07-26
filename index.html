@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WealthManager Pro - Tableau de Bord & Synchronisation Partagée</title>
+    <title>WealthManager Pro - Tableau de Bord & Gestion du Patrimoine</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -16,78 +16,40 @@
             from { opacity: 0; transform: translateY(8px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .pulse-subtle { animation: pulseGlow 2s infinite; }
-        @keyframes pulseGlow {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
     </style>
 </head>
 <body class="min-h-full flex flex-col text-slate-800 bg-slate-50">
 
     <!-- Header / Navigation bar -->
     <header class="sticky top-0 w-full z-40 glass border-b border-slate-200/80">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-gradient-to-tr from-indigo-600 via-indigo-700 to-purple-600 rounded-xl flex items-center justify-center text-white font-extrabold text-lg shadow-md shadow-indigo-200">
                     WM
                 </div>
                 <div>
                     <h1 class="font-bold text-xl text-slate-900 tracking-tight leading-none">WealthManager <span class="text-indigo-600">Pro</span></h1>
-                    <p class="text-xs text-slate-500 font-medium mt-0.5">Gestion de Patrimoine Synchronisée</p>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">Gestion de Patrimoine & Financement</p>
                 </div>
             </div>
 
-            <!-- Workspace Sync Selector Badge & Auth -->
-            <div class="flex items-center gap-2 sm:gap-3">
-                <!-- Sync indicator badge -->
-                <button onclick="openWorkspaceModal()" class="flex items-center gap-2 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-xl border border-indigo-200/80 font-medium transition shadow-sm">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                    <span class="hidden md:inline text-slate-500">Espace :</span>
-                    <span id="header-workspace-name" class="font-bold text-indigo-900">Chargement...</span>
-                    <span class="text-indigo-400">⚡</span>
-                </button>
-
-                <div id="auth-status" class="hidden sm:flex items-center gap-2 text-xs bg-slate-100 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 font-medium">
-                    <span id="user-id-display">Mode Partagé</span>
+            <!-- User Status & Auth Buttons -->
+            <div class="flex items-center gap-3">
+                <div id="auth-status" class="hidden sm:flex items-center gap-2 text-xs bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="user-id-display">Connecté</span>
                 </div>
-
-                <button id="btn-logout" onclick="handleLogout()" class="hidden text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-2 rounded-xl transition">
+                <button id="btn-logout" onclick="handleLogout()" class="hidden text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-1.5 rounded-xl transition">
                     Déconnexion
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="pt-6 pb-20 px-4 sm:px-6 max-w-7xl mx-auto w-full flex-grow">
-
-        <!-- Synchronized Workspace Notification Banner -->
-        <div class="mb-6 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-2xl p-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg border border-indigo-800/50">
-            <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-indigo-500/20 rounded-xl text-indigo-300 text-xl border border-indigo-400/20">
-                    🔄
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h3 class="font-bold text-sm text-indigo-100">Synchronisation Multi-Pages Active</h3>
-                        <span class="px-2 py-0.5 text-[10px] uppercase tracking-wider font-extrabold bg-emerald-500/20 text-emerald-300 rounded-md border border-emerald-400/30">En direct</span>
-                    </div>
-                    <p class="text-xs text-indigo-200/80 mt-0.5">Toutes les pages portant le même nom d'espace <span id="banner-workspace-tag" class="font-bold text-white underline decoration-indigo-400">"..."</span> affichent exactement les mêmes données en temps réel.</p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <button onclick="copyWorkspaceCode()" class="text-xs bg-white/10 hover:bg-white/20 text-indigo-100 font-semibold px-3 py-2 rounded-xl border border-white/10 transition flex items-center gap-1.5 active:scale-95">
-                    <span>📋</span> Copier le nom
-                </button>
-                <button onclick="openWorkspaceModal()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3.5 py-2 rounded-xl transition shadow-md shadow-indigo-950 active:scale-95">
-                    Changer d'Espace
-                </button>
-            </div>
-        </div>
+    <main class="pt-8 pb-20 px-4 sm:px-6 max-w-7xl mx-auto w-full flex-grow">
 
         <!-- Auth Section (Shown when logged out) -->
-        <section id="loginSection" class="max-w-md mx-auto my-8 bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border border-slate-100 animate-fade-in hidden">
+        <section id="loginSection" class="max-w-md mx-auto my-8 bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border border-slate-100 animate-fade-in">
             <div class="text-center mb-8">
                 <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 font-bold text-2xl border border-indigo-100">
                     🔒
@@ -125,8 +87,8 @@
             </div>
         </section>
 
-        <!-- Dashboard Section -->
-        <div id="dashboardSection" class="space-y-8 animate-fade-in">
+        <!-- Dashboard Section (Shown when logged in) -->
+        <div id="dashboardSection" class="hidden space-y-8 animate-fade-in">
             
             <!-- Hero Consolidated Net Worth Card -->
             <section class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden border border-slate-800">
@@ -135,7 +97,7 @@
                     <div>
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-400/20 mb-3">
                             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                            Patrimoine Consolidé - <span id="hero-space-name">Espace Général</span>
+                            Patrimoine Consolidé
                         </span>
                         <h2 class="text-indigo-200 font-medium tracking-wide uppercase text-xs">Valeur totale de votre patrimoine</h2>
                         <div id="total-patrimoine" class="text-3xl sm:text-5xl font-extrabold mt-2 tracking-tight text-white">
@@ -216,9 +178,8 @@
                         <input id="search-input" oninput="renderAssets()" type="text" placeholder="Rechercher (ex: Appartement, PEA, LVMH)..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
                     </div>
 
-                    <div class="flex items-center gap-2 text-xs font-medium text-slate-500">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                        Synchronisé avec Firestore (Espace Partagé)
+                    <div class="text-xs font-medium text-slate-500">
+                        Mis à jour en temps réel via Firestore
                     </div>
                 </div>
 
@@ -238,7 +199,7 @@
                             <tr>
                                 <td colspan="6" class="px-6 py-16 text-center text-slate-400">
                                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mb-3"></div>
-                                    <p class="text-sm font-medium text-slate-600">Connexion à l'espace synchronisé...</p>
+                                    <p class="text-sm font-medium text-slate-600">Chargement de votre patrimoine...</p>
                                 </td>
                             </tr>
                         </tbody>
@@ -247,43 +208,6 @@
             </section>
         </div>
     </main>
-
-    <!-- Modal: Workspace / Shared Name Switcher -->
-    <div id="workspace-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 transform transition-all animate-fade-in">
-            <div class="flex justify-between items-center mb-6">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xl">
-                        🔗
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-slate-900">Espace Partagé</h3>
-                        <p class="text-xs text-slate-500">Entrez le nom d'un dossier pour synchroniser</p>
-                    </div>
-                </div>
-                <button onclick="closeWorkspaceModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-
-            <form onsubmit="handleWorkspaceSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nom de l'Espace ou du Dossier</label>
-                    <input id="input-workspace-name" type="text" required placeholder="ex: Patrimoine-Famille, MonPatrimoine, SCI-2026" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-semibold text-indigo-900">
-                    <p class="text-xs text-slate-400 mt-2">💡 Toutes les personnes ou tous les onglets saisissant exactement ce même nom verront leurs données synchronisées instantanément.</p>
-                </div>
-
-                <div class="pt-2 flex gap-3">
-                    <button type="button" onclick="closeWorkspaceModal()" class="w-1/2 px-4 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 text-sm transition">
-                        Annuler
-                    </button>
-                    <button type="submit" class="w-1/2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-indigo-200 active:scale-95">
-                        Rejoindre l'espace
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Modal: Add / Edit Asset -->
     <div id="asset-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -354,7 +278,7 @@
             </div>
             
             <h3 class="text-lg font-bold text-slate-900 mb-1">Supprimer cet actif ?</h3>
-            <p class="text-xs text-slate-500 mb-6">Êtes-vous sûr de vouloir retirer <span id="delete-asset-name" class="font-semibold text-slate-800">cet actif</span> ? Cette action sera synchronisée sur toutes les pages ouvertes.</p>
+            <p class="text-xs text-slate-500 mb-6">Êtes-vous sûr de vouloir retirer <span id="delete-asset-name" class="font-semibold text-slate-800">cet actif</span> ? Cette action est irréversible.</p>
 
             <div class="flex gap-3">
                 <button onclick="closeDeleteModal()" class="w-1/2 px-4 py-2.5 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 text-sm transition">
@@ -376,7 +300,7 @@
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global environment bindings
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wealth-manager-pro';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'solution-client-c9f55';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyC44TI-kF0B-E999nxSq0mpn5me6Ncay4s",
             authDomain: "solution-client-c9f55.firebaseapp.com",
@@ -391,21 +315,7 @@
         let activeCategoryFilter = 'ALL';
         let assetToDeleteId = null;
         let currentUser = null;
-        let currentUnsubscribe = null;
-
-        // Shared Workspace Name (Default to "MonPatrimoine" or retrieve from URL / LocalStorage)
-        const urlParams = new URLSearchParams(window.location.search);
-        let currentWorkspaceName = urlParams.get('workspace') || localStorage.getItem('wm_workspace_name') || 'MonPatrimoine';
-
-        // BroadcastChannel for instant local tab-to-tab notification
-        const syncChannel = new BroadcastChannel('wm_sync_channel');
-        syncChannel.onmessage = (event) => {
-            if (event.data && event.data.type === 'WORKSPACE_CHANGED') {
-                if (event.data.workspace !== currentWorkspaceName) {
-                    showToast(`Un autre onglet a basculé vers l'espace : ${event.data.workspace}`, 'info');
-                }
-            }
-        };
+        let authMode = 'login'; // 'login' or 'signup'
 
         const categoryMeta = {
             'Immobilier': { label: 'Immobilier', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: '🏠', isUnit: false, labelBalance: 'Valeur du bien (€)' },
@@ -418,24 +328,13 @@
         const formatEUR = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val || 0);
         const formatQty = (val) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 4 }).format(val || 0);
 
-        function sanitizeWorkspaceName(str) {
-            return (str || 'MonPatrimoine')
-                .trim()
-                .toLowerCase()
-                .replace(/[^a-z0-9_-]/g, '_')
-                .substring(0, 40) || 'monpatrimoine';
-        }
-
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            let bgClass = 'bg-slate-900 text-white';
-            if (type === 'error') bgClass = 'bg-red-600 text-white';
-            if (type === 'info') bgClass = 'bg-indigo-600 text-white';
-
+            const bgClass = type === 'success' ? 'bg-slate-900 text-white' : 'bg-red-600 text-white';
             toast.className = `${bgClass} px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2 animate-fade-in pointer-events-auto border border-white/10`;
             toast.innerHTML = `
-                <span>${type === 'success' ? '✓' : type === 'info' ? 'ℹ️' : '⚠️'}</span>
+                <span>${type === 'success' ? '✓' : '⚠️'}</span>
                 <span>${message}</span>
             `;
             container.appendChild(toast);
@@ -445,99 +344,105 @@
             }, 3500);
         }
 
-        // Initialize Authentication before Firestore listeners
-        async function ensureAuthenticated() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else if (!auth.currentUser) {
-                    await signInAnonymously(auth);
-                }
-            } catch (e) {
-                console.warn("Falling back to anonymous sign-in:", e);
-                if (!auth.currentUser) await signInAnonymously(auth);
-            }
-        }
-
-        // Connect real-time listener to current shared portfolio workspace
-        async function subscribeToWorkspace(workspaceName) {
-            await ensureAuthenticated();
-            if (!auth.currentUser) return;
-
-            currentWorkspaceName = workspaceName;
-            localStorage.setItem('wm_workspace_name', workspaceName);
-            
-            const cleanSlug = sanitizeWorkspaceName(workspaceName);
-            
-            // Update UI Labels
-            document.getElementById('header-workspace-name').innerText = workspaceName;
-            document.getElementById('banner-workspace-tag').innerText = `"${workspaceName}"`;
-            document.getElementById('hero-space-name').innerText = `Espace "${workspaceName}"`;
-
-            // Unsubscribe existing listener if switching workspaces
-            if (currentUnsubscribe) {
-                currentUnsubscribe();
-            }
-
-            // Path adhering strictly to Rule 1: /artifacts/{appId}/public/data/{collectionName}
-            const publicCollectionName = `portfolio_${cleanSlug}`;
-            const assetsRef = collection(db, 'artifacts', appId, 'public', 'data', publicCollectionName);
-
-            currentUnsubscribe = onSnapshot(assetsRef, (snapshot) => {
-                rawAssets = [];
-                snapshot.forEach((doc) => {
-                    rawAssets.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-
-                rawAssets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                updateCalculatedTotals();
-                renderAssets();
-            }, (error) => {
-                console.error("Firestore workspace sync error:", error);
-                showToast("Erreur de synchronisation réseau", "error");
-            });
-        }
-
-        onAuthStateChanged(auth, (user) => {
+        // Authentication state observer
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                subscribeToWorkspace(currentWorkspaceName);
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('auth-status').classList.remove('hidden');
+                document.getElementById('btn-logout').classList.remove('hidden');
+                document.getElementById('user-id-display').innerText = user.email || `ID: ${user.uid.substring(0, 8)}`;
+
+                // Subscribe to realtime user assets
+                const assetsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'assets');
+                onSnapshot(assetsRef, (snapshot) => {
+                    rawAssets = [];
+                    snapshot.forEach((doc) => {
+                        rawAssets.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+
+                    rawAssets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    updateCalculatedTotals();
+                    renderAssets();
+                }, (error) => {
+                    console.error("Firestore sync error:", error);
+                    showToast("Erreur de synchronisation", "error");
+                });
+            } else {
+                currentUser = null;
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('dashboardSection').classList.add('hidden');
+                document.getElementById('auth-status').classList.add('hidden');
+                document.getElementById('btn-logout').classList.add('hidden');
             }
         });
 
-        window.openWorkspaceModal = () => {
-            document.getElementById('input-workspace-name').value = currentWorkspaceName;
-            document.getElementById('workspace-modal').classList.remove('hidden');
+        // Switch Auth Tab
+        window.switchAuthTab = (mode) => {
+            authMode = mode;
+            const loginBtn = document.getElementById('tab-login-btn');
+            const signupBtn = document.getElementById('tab-signup-btn');
+            const submitBtn = document.getElementById('authSubmitBtn');
+
+            if (mode === 'login') {
+                loginBtn.className = "w-1/2 py-2 border-b-2 border-indigo-600 text-indigo-600 transition";
+                signupBtn.className = "w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition";
+                submitBtn.innerText = "Se connecter";
+            } else {
+                signupBtn.className = "w-1/2 py-2 border-b-2 border-indigo-600 text-indigo-600 transition";
+                loginBtn.className = "w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition";
+                submitBtn.innerText = "Créer un compte";
+            }
         };
 
-        window.closeWorkspaceModal = () => {
-            document.getElementById('workspace-modal').classList.add('hidden');
+        // Auth Submit handler
+        window.handleAuthSubmit = async (event) => {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('authSubmitBtn');
+
+            btn.disabled = true;
+            btn.innerText = "Traitement...";
+
+            try {
+                if (authMode === 'login') {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showToast("Connexion réussie !");
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    showToast("Compte créé avec succès !");
+                }
+            } catch (err) {
+                console.error("Auth error:", err);
+                showToast(err.message || "Identifiants incorrects ou accès refusé", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = authMode === 'login' ? "Se connecter" : "Créer un compte";
+            }
         };
 
-        window.handleWorkspaceSubmit = (e) => {
-            e.preventDefault();
-            const newName = document.getElementById('input-workspace-name').value.trim();
-            if (!newName) return;
-
-            subscribeToWorkspace(newName);
-            closeWorkspaceModal();
-            showToast(`Espace synchronisé connecté : "${newName}" !`, 'info');
-
-            // Notify other open tabs
-            syncChannel.postMessage({ type: 'WORKSPACE_CHANGED', workspace: newName });
+        // Quick Guest Login
+        window.handleDemoLogin = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                showToast("Accès démo activé !");
+            } catch (e) {
+                showToast("Impossible d'activer le mode démo", "error");
+            }
         };
 
-        window.copyWorkspaceCode = () => {
-            const temp = document.createElement('textarea');
-            temp.value = currentWorkspaceName;
-            document.body.appendChild(temp);
-            temp.select();
-            document.execCommand('copy');
-            document.body.removeChild(temp);
-            showToast(`Nom d'espace "${currentWorkspaceName}" copié !`);
+        window.handleLogout = async () => {
+            await signOut(auth);
+            showToast("Déconnecté avec succès");
         };
 
         function calculateAssetValue(asset) {
@@ -576,6 +481,7 @@
         window.setCategoryFilter = (category) => {
             activeCategoryFilter = category;
             
+            // Highlight current pill
             ['ALL', 'Bancaire', 'Immobilier', 'Bourse', 'Alternatifs'].forEach(cat => {
                 const btn = document.getElementById(`pill-${cat}`);
                 if (!btn) return;
@@ -607,7 +513,7 @@
                                 📂
                             </div>
                             <h4 class="font-bold text-slate-700 mb-1">Aucun actif trouvé</h4>
-                            <p class="text-xs text-slate-400 mb-4">${rawAssets.length === 0 ? 'Cet espace partagé est encore vide. Ajoutez votre premier actif ci-dessous.' : 'Aucun résultat ne correspond à votre recherche.'}</p>
+                            <p class="text-xs text-slate-400 mb-4">${rawAssets.length === 0 ? 'Commencez par ajouter votre premier bien immobilier, compte ou action.' : 'Aucun résultat ne correspond à votre recherche.'}</p>
                             ${rawAssets.length === 0 ? `<button onclick="openAddModal()" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm hover:bg-indigo-700 transition">+ Ajouter un actif</button>` : ''}
                         </td>
                     </tr>
@@ -722,8 +628,7 @@
 
         window.handleFormSubmit = async (event) => {
             event.preventDefault();
-            await ensureAuthenticated();
-            if (!auth.currentUser) return;
+            if (!currentUser) return;
 
             const id = document.getElementById('modal-asset-id').value;
             const name = document.getElementById('modal-asset-name').value.trim();
@@ -746,19 +651,16 @@
                 assetData.value = assetData.balance;
             }
 
-            const cleanSlug = sanitizeWorkspaceName(currentWorkspaceName);
-            const publicCollectionName = `portfolio_${cleanSlug}`;
-
             try {
                 if (id) {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', publicCollectionName, id);
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'assets', id);
                     await updateDoc(docRef, assetData);
-                    showToast("Actif mis à jour et synchronisé !");
+                    showToast("Actif mis à jour avec succès !");
                 } else {
                     assetData.createdAt = Date.now();
-                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', publicCollectionName);
+                    const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'assets');
                     await addDoc(colRef, assetData);
-                    showToast("Actif ajouté et synchronisé en direct !");
+                    showToast("Actif ajouté avec succès !");
                 }
                 closeModal();
             } catch (err) {
@@ -779,17 +681,12 @@
         };
 
         window.confirmDeleteAsset = async () => {
-            if (!assetToDeleteId) return;
-            await ensureAuthenticated();
-            if (!auth.currentUser) return;
-
-            const cleanSlug = sanitizeWorkspaceName(currentWorkspaceName);
-            const publicCollectionName = `portfolio_${cleanSlug}`;
+            if (!assetToDeleteId || !currentUser) return;
 
             try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', publicCollectionName, assetToDeleteId);
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'assets', assetToDeleteId);
                 await deleteDoc(docRef);
-                showToast("Actif supprimé et synchronisé partout");
+                showToast("Actif supprimé avec succès");
                 closeDeleteModal();
             } catch (err) {
                 console.error("Delete error:", err);
@@ -797,20 +694,12 @@
             }
         };
 
-        // Close modals on background click
+        // Close modals on background backdrop click
         document.getElementById('asset-modal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('asset-modal')) closeModal();
         });
         document.getElementById('delete-modal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('delete-modal')) closeDeleteModal();
-        });
-        document.getElementById('workspace-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('workspace-modal')) closeWorkspaceModal();
-        });
-
-        // Initialize default workspace subscription on startup
-        ensureAuthenticated().then(() => {
-            subscribeToWorkspace(currentWorkspaceName);
         });
     </script>
 </body>
