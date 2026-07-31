@@ -1,318 +1,753 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-50">
+<html lang="fr" class="h-full bg-slate-900 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WealthManager Pro - Tableau de Bord & Gestion du Patrimoine</title>
+    <title>WealthManager Pro - Gestion Multi-Investissements & Patrimoine</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN for visual analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); }
-        .animate-fade-in { animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 9999px;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body class="min-h-full flex flex-col text-slate-800 bg-slate-50">
+<body class="min-h-full flex flex-col bg-slate-950 text-slate-100 custom-scrollbar selection:bg-indigo-500 selection:text-white">
 
-    <!-- Header / Navigation bar -->
-    <header class="sticky top-0 w-full z-40 glass border-b border-slate-200/80">
+    <header class="sticky top-0 w-full z-40 glass-nav">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-tr from-indigo-600 via-indigo-700 to-purple-600 rounded-xl flex items-center justify-center text-white font-extrabold text-lg shadow-md shadow-indigo-200">
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('overview')">
+                <div class="w-11 h-11 bg-gradient-to-br from-indigo-500 via-purple-600 to-emerald-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/20">
                     WM
                 </div>
                 <div>
-                    <h1 class="font-bold text-xl text-slate-900 tracking-tight leading-none">WealthManager <span class="text-indigo-600">Pro</span></h1>
-                    <p class="text-xs text-slate-500 font-medium mt-0.5">Gestion de Patrimoine & Financement</p>
+                    <h1 class="font-bold text-xl text-white tracking-tight flex items-center gap-2">
+                        WealthManager <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent font-extrabold">PRO</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Gestion Consolidée Multi-Investissements</p>
                 </div>
             </div>
 
+            <!-- Main Page Navigation Links (Desktop) -->
+            <nav id="main-nav-links" class="hidden lg:flex items-center gap-1 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 text-xs font-semibold">
+                <button onclick="switchView('overview')" id="nav-overview" class="px-4 py-2 rounded-xl transition flex items-center gap-2 text-indigo-400 bg-indigo-500/10 border border-indigo-500/30">
+                    <span>🌐</span> Vue d'Ensemble
+                </button>
+                <button onclick="switchView('realestate')" id="nav-realestate" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
+                    <span>🏠</span> Immobilier
+                </button>
+                <button onclick="switchView('stocks')" id="nav-stocks" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
+                    <span>📈</span> Bourse & Actions
+                </button>
+                <button onclick="switchView('banking')" id="nav-banking" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
+                    <span>🏦</span> Epargne & Cash
+                </button>
+                <button onclick="switchView('crypto')" id="nav-crypto" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
+                    <span>💎</span> Alternatifs & Crypto
+                </button>
+                <button onclick="switchView('projections')" id="nav-projections" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
+                    <span>🔮</span> Projections
+                </button>
+            </nav>
+
             <!-- User Status & Auth Buttons -->
             <div class="flex items-center gap-3">
-                <!-- Admin Button (visible only to Admin) -->
-                <button id="btn-admin-panel" onclick="openAdminModal()" class="hidden text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm">
-                    <span>👑</span> Administration
-                    <span id="pending-count-badge" class="hidden bg-amber-600 text-white rounded-full px-1.5 py-0.2 text-[10px] font-extrabold">0</span>
-                </button>
-
-                <div id="auth-status" class="hidden sm:flex items-center gap-2 text-xs bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 font-medium">
-                    <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <div id="auth-status" class="hidden sm:flex items-center gap-2 text-xs bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-800 text-slate-300 font-medium">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span id="user-id-display">Connecté</span>
                 </div>
-                <button id="btn-logout" onclick="handleLogout()" class="hidden text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-1.5 rounded-xl transition">
+                <button id="btn-logout" onclick="handleLogout()" class="hidden text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-3.5 py-2 rounded-xl border border-slate-700 transition">
                     Déconnexion
                 </button>
             </div>
         </div>
+
+        <!-- Secondary Sub-Navigation Pill Scroll (Mobile & Tablet) -->
+        <div class="lg:hidden border-t border-slate-800/80 bg-slate-900/90 px-4 py-2.5 overflow-x-auto flex items-center gap-2 text-xs font-semibold custom-scrollbar">
+            <button onclick="switchView('overview')" id="mnav-overview" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-indigo-400 bg-indigo-500/10 border border-indigo-500/30">
+                🌐 Accueil
+            </button>
+            <button onclick="switchView('realestate')" id="mnav-realestate" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-slate-400 hover:bg-slate-800">
+                🏠 Immobilier
+            </button>
+            <button onclick="switchView('stocks')" id="mnav-stocks" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-slate-400 hover:bg-slate-800">
+                📈 Bourse
+            </button>
+            <button onclick="switchView('banking')" id="mnav-banking" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-slate-400 hover:bg-slate-800">
+                🏦 Epargne
+            </button>
+            <button onclick="switchView('crypto')" id="mnav-crypto" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-slate-400 hover:bg-slate-800">
+                💎 Alternatifs
+            </button>
+            <button onclick="switchView('projections')" id="mnav-projections" class="whitespace-nowrap px-3.5 py-1.5 rounded-xl text-slate-400 hover:bg-slate-800">
+                🔮 Projections
+            </button>
+        </div>
     </header>
 
-    <main class="pt-8 pb-20 px-4 sm:px-6 max-w-7xl mx-auto w-full flex-grow">
+    <main class="pt-6 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full flex-grow">
 
-        <!-- Auth Section (Shown when logged out) -->
-        <section id="loginSection" class="max-w-md mx-auto my-8 bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border border-slate-100 animate-fade-in">
+        <section id="loginSection" class="max-w-md mx-auto my-12 glass-panel p-8 sm:p-10 rounded-3xl shadow-2xl animate-fade-in border border-slate-800">
             <div class="text-center mb-8">
-                <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 font-bold text-2xl border border-indigo-100">
-                    🔒
+                <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 font-bold text-3xl border border-indigo-500/20 shadow-inner">
+                    🔐
                 </div>
-                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Espace Privé</h2>
-                <p class="text-slate-500 text-sm mt-2">Accès sécurisé sur validation préalable de l'administrateur.</p>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Accès Sécurisé</h2>
+                <p class="text-slate-400 text-sm mt-2">Connectez-vous pour piloter l'ensemble de vos actifs et investissements.</p>
             </div>
 
             <!-- Auth Tabs -->
-            <div class="flex border-b border-slate-200 mb-6 text-sm font-semibold">
-                <button id="tab-login-btn" onclick="switchAuthTab('login')" class="w-1/2 py-2 border-b-2 border-indigo-600 text-indigo-600 transition">Connexion</button>
-                <button id="tab-signup-btn" onclick="switchAuthTab('signup')" class="w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition">Demander un compte</button>
+            <div class="flex border-b border-slate-800 mb-6 text-sm font-semibold">
+                <button id="tab-login-btn" onclick="switchAuthTab('login')" class="w-1/2 py-2.5 border-b-2 border-indigo-500 text-indigo-400 transition">Connexion</button>
+                <button id="tab-signup-btn" onclick="switchAuthTab('signup')" class="w-1/2 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition">S'inscrire</button>
             </div>
 
             <form id="loginForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Adresse email</label>
-                    <input type="email" id="loginEmail" required placeholder="adresse@email.com" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Adresse email</label>
+                    <input type="email" id="loginEmail" required placeholder="investisseur@patrimoine.fr" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Mot de passe</label>
-                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Mot de passe</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition">
                 </div>
                 
-                <div id="signup-info-banner" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                    ℹ️ <strong>Note :</strong> Votre demande de création de compte sera soumise à la validation manuelle de l'administrateur avant de pouvoir accéder au patrimoine.
-                </div>
-
-                <button type="submit" id="authSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-slate-200 text-sm active:scale-95">
+                <button type="submit" id="authSubmitBtn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-indigo-900/40 text-sm active:scale-95">
                     Se connecter
                 </button>
             </form>
 
-            <div class="mt-6 pt-6 border-t border-slate-100 text-center">
-                <p class="text-xs text-slate-400 mb-3">Ou testez directement l'interface :</p>
-                <button onclick="handleDemoLogin()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
-                    <span>🚀</span> Accès Démo Rapide (Invité)
+            <div class="mt-8 pt-6 border-t border-slate-800 text-center">
+                <p class="text-xs text-slate-500 mb-3">Découvrez la plateforme immédiatement avec des données fictives pré-chargées :</p>
+                <button onclick="handleDemoLogin()" class="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold py-3 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                    <span>🚀</span> Accéder en Mode Démo (Invité)
                 </button>
             </div>
         </section>
 
-        <!-- Pending Approval Section (Shown when logged in but status === 'pending') -->
-        <section id="pendingSection" class="hidden max-w-lg mx-auto my-12 bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border border-amber-100 text-center animate-fade-in">
-            <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-5 font-bold text-3xl">
-                ⏳
-            </div>
-            <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Compte en attente de validation</h2>
-            <p class="text-slate-600 text-sm mb-6 leading-relaxed">
-                Votre inscription a bien été enregistrée. Pour des raisons de sécurité, un administrateur doit valider votre accès avant que vous puissiez accéder au tableau de bord.
-            </p>
+        <div id="appContainer" class="hidden space-y-8 animate-fade-in">
 
-            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-left text-xs space-y-2 mb-6">
-                <div class="flex justify-between">
-                    <span class="text-slate-400">Compte :</span>
-                    <span id="pending-user-email" class="font-semibold text-slate-800">-</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-400">Statut :</span>
-                    <span class="inline-flex items-center gap-1 font-bold text-amber-600">
-                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span> En attente d'approbation
-                    </span>
-                </div>
-            </div>
+            <!-- ========================================== -->
+            <!-- 1. VUE D'ENSEMBLE (DASHBOARD HOMEPAGE) -->
+            <!-- ========================================== -->
+            <div id="view-overview" class="space-y-8">
+                
+                <!-- Hero Section: Consolidated Net Worth & Passive Income Bar -->
+                <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950/80 to-slate-900 p-6 sm:p-10 border border-indigo-500/20 shadow-2xl">
+                    <div class="absolute -right-16 -top-16 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute right-1/3 -bottom-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+                        <div>
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 mb-4">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                                Synthèse Consolidée en Temps Réel
+                            </div>
+                            <h2 class="text-slate-400 font-medium tracking-wider uppercase text-xs">Patrimoine Net Total (Actifs - Emprunts)</h2>
+                            <div id="total-patrimoine-net" class="text-4xl sm:text-6xl font-black mt-1 tracking-tight text-white">
+                                0,00 €
+                            </div>
+                            
+                            <div class="mt-4 flex flex-wrap items-center gap-4 text-xs">
+                                <span class="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl text-slate-300">
+                                    Patrimoine Brut: <strong id="total-patrimoine-brut" class="text-white font-bold">0,00 €</strong>
+                                </span>
+                                <span class="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl text-slate-300">
+                                    Dettes Immobilières: <strong id="total-dettes-immo" class="text-rose-400 font-bold">0,00 €</strong>
+                                </span>
+                                <span class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-xl">
+                                    Plus-Value Latente Totale: <strong id="total-plus-value" class="font-bold">0,00 €</strong>
+                                </span>
+                            </div>
+                        </div>
 
-            <div class="flex flex-col sm:flex-row gap-3">
-                <button onclick="checkUserApprovalStatus()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition text-sm shadow-md">
-                    🔄 Vérifier le statut
-                </button>
-                <button onclick="handleLogout()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition text-sm">
-                    Se déconnecter
-                </button>
-            </div>
-        </section>
+                        <!-- Quick Cashflow & Action Block -->
+                        <div class="flex flex-col sm:flex-row lg:flex-col gap-3 min-w-[260px]">
+                            <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-4">
+                                <div>
+                                    <p class="text-xs text-slate-400 font-medium">Cash-Flow Mensuel Net Net</p>
+                                    <p id="total-cashflow-mensuel" class="text-xl font-bold text-emerald-400 mt-0.5">+0,00 € / mois</p>
+                                </div>
+                                <span class="text-2xl p-2 bg-emerald-500/10 rounded-xl">💸</span>
+                            </div>
 
-        <!-- Access Rejected Section -->
-        <section id="rejectedSection" class="hidden max-w-lg mx-auto my-12 bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border border-red-100 text-center animate-fade-in">
-            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5 font-bold text-3xl">
-                🚫
-            </div>
-            <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Accès Non Autorisé</h2>
-            <p class="text-slate-600 text-sm mb-6">
-                Votre demande de création de compte n'a pas été retenue par l'administrateur.
-            </p>
-            <button onclick="handleLogout()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 py-3 rounded-xl transition text-sm">
-                Retour à la connexion
-            </button>
-        </section>
+                            <button onclick="openGenericAddModal()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-emerald-950/50 transition text-sm flex items-center justify-center gap-2 active:scale-95">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                Ajouter un nouvel actif
+                            </button>
+                        </div>
+                    </div>
+                </section>
 
-        <!-- Dashboard Section (Shown when logged in AND approved) -->
-        <div id="dashboardSection" class="hidden space-y-8 animate-fade-in">
-            
-            <!-- Hero Consolidated Net Worth Card -->
-            <section class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden border border-slate-800">
-                <div class="absolute -right-10 -top-10 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                    <div>
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-400/20 mb-3">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                            Patrimoine Consolidé
-                        </span>
-                        <h2 class="text-indigo-200 font-medium tracking-wide uppercase text-xs">Valeur totale de votre patrimoine</h2>
-                        <div id="total-patrimoine" class="text-3xl sm:text-5xl font-extrabold mt-2 tracking-tight text-white">
-                            0,00 €
+                <!-- Categorized Investment Summaries (Grid Cards) -->
+                <section>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <span>📊</span> Répartition par Classe d'Investissement
+                        </h3>
+                        <span class="text-xs text-slate-400">Cliquez sur une catégorie pour ouvrir sa page dédiée</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Card Immobilier -->
+                        <div onclick="switchView('realestate')" class="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-emerald-500/50 transition cursor-pointer group hover:bg-slate-800/60 relative overflow-hidden">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xl">🏠</span>
+                                <span class="text-xs font-semibold px-2.5 py-1 bg-slate-900 rounded-lg text-slate-400 group-hover:text-emerald-400 transition">Explorer &rarr;</span>
+                            </div>
+                            <h4 class="font-bold text-white text-base">Immobilier</h4>
+                            <p id="card-immo-value" class="text-2xl font-black text-slate-100 mt-1">0,00 €</p>
+                            <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between text-xs text-slate-400">
+                                <span>Actifs: <strong id="card-immo-count" class="text-white">0</strong></span>
+                                <span>Cashflow: <strong id="card-immo-cashflow" class="text-emerald-400 font-semibold">0 €/m</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Card Bourse -->
+                        <div onclick="switchView('stocks')" class="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-indigo-500/50 transition cursor-pointer group hover:bg-slate-800/60 relative overflow-hidden">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl text-xl">📈</span>
+                                <span class="text-xs font-semibold px-2.5 py-1 bg-slate-900 rounded-lg text-slate-400 group-hover:text-indigo-400 transition">Explorer &rarr;</span>
+                            </div>
+                            <h4 class="font-bold text-white text-base">Bourse & Actions</h4>
+                            <p id="card-stocks-value" class="text-2xl font-black text-slate-100 mt-1">0,00 €</p>
+                            <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between text-xs text-slate-400">
+                                <span>Positions: <strong id="card-stocks-count" class="text-white">0</strong></span>
+                                <span>Dividendes: <strong id="card-stocks-div" class="text-indigo-400 font-semibold">0 €/an</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Card Epargne -->
+                        <div onclick="switchView('banking')" class="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-cyan-500/50 transition cursor-pointer group hover:bg-slate-800/60 relative overflow-hidden">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="p-3 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl text-xl">🏦</span>
+                                <span class="text-xs font-semibold px-2.5 py-1 bg-slate-900 rounded-lg text-slate-400 group-hover:text-cyan-400 transition">Explorer &rarr;</span>
+                            </div>
+                            <h4 class="font-bold text-white text-base">Épargne & Cash</h4>
+                            <p id="card-banking-value" class="text-2xl font-black text-slate-100 mt-1">0,00 €</p>
+                            <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between text-xs text-slate-400">
+                                <span>Comptes: <strong id="card-banking-count" class="text-white">0</strong></span>
+                                <span>Taux Moyen: <strong id="card-banking-rate" class="text-cyan-400 font-semibold">0,0%</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Card Crypto & Alternatifs -->
+                        <div onclick="switchView('crypto')" class="glass-panel p-5 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition cursor-pointer group hover:bg-slate-800/60 relative overflow-hidden">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="p-3 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl text-xl">💎</span>
+                                <span class="text-xs font-semibold px-2.5 py-1 bg-slate-900 rounded-lg text-slate-400 group-hover:text-purple-400 transition">Explorer &rarr;</span>
+                            </div>
+                            <h4 class="font-bold text-white text-base">Alternatifs & Crypto</h4>
+                            <p id="card-crypto-value" class="text-2xl font-black text-slate-100 mt-1">0,00 €</p>
+                            <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between text-xs text-slate-400">
+                                <span>Actifs: <strong id="card-crypto-count" class="text-white">0</strong></span>
+                                <span>Part Patrimoine: <strong id="card-crypto-share" class="text-purple-400 font-semibold">0%</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Analytics Row -->
+                <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Allocation Donut Chart -->
+                    <div class="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col">
+                        <h4 class="font-bold text-white text-base mb-1">Allocation Globale</h4>
+                        <p class="text-xs text-slate-400 mb-4">Répartition en pourcentage du patrimoine brut</p>
+                        <div class="flex-grow flex items-center justify-center min-h-[220px]">
+                            <canvas id="overviewAllocationChart"></canvas>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-3">
-                        <button onclick="openAddModal()" class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-5 py-3 rounded-2xl transition shadow-lg shadow-emerald-900/30 text-sm active:scale-95">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            Ajouter un bien / actif
-                        </button>
+                    <!-- Asset Growth / Trajectory Line Chart -->
+                    <div class="glass-panel p-6 rounded-3xl border border-slate-800 lg:col-span-2 flex flex-col">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h4 class="font-bold text-white text-base">Historique & Projection de Croissance</h4>
+                                <p class="text-xs text-slate-400">Évolution de la valeur du portefeuille sur 12 mois</p>
+                            </div>
+                            <span class="text-xs bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 px-3 py-1 rounded-full w-fit">Modèle composé dynamique</span>
+                        </div>
+                        <div class="flex-grow min-h-[220px]">
+                            <canvas id="overviewGrowthChart"></canvas>
+                        </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- Breakdown progress bar -->
-                <div class="mt-8 pt-6 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                <!-- Consolidated Multi-Asset Table -->
+                <section class="glass-panel rounded-3xl border border-slate-800 overflow-hidden">
+                    <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-white text-base">Registre Global des Investissements</h4>
+                            <p class="text-xs text-slate-400">Vue centralisée de tous les éléments du patrimoine</p>
+                        </div>
+
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <div class="relative w-full sm:w-64">
+                                <input id="overview-search" oninput="renderOverviewTable()" type="text" placeholder="Rechercher un actif..." class="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                <span class="absolute left-3 top-2.5 text-slate-500 text-xs">🔍</span>
+                            </div>
+                            <select id="overview-filter" onchange="renderOverviewTable()" class="bg-slate-900 border border-slate-800 text-xs text-slate-300 rounded-xl px-3 py-2 outline-none">
+                                <option value="ALL">Toutes catégories</option>
+                                <option value="Immobilier">Immobilier</option>
+                                <option value="Bourse">Bourse</option>
+                                <option value="Bancaire">Épargne</option>
+                                <option value="Alternatifs">Alternatifs & Crypto</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3.5 font-semibold">Nom de l'Actif / Support</th>
+                                    <th class="px-6 py-3.5 font-semibold">Catégorie</th>
+                                    <th class="px-6 py-3.5 font-semibold">Détail Spécifique</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Valeur Actuelle</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Plus / Moins Value</th>
+                                    <th class="px-6 py-3.5 font-semibold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-table-body" class="divide-y divide-slate-800/60 text-slate-200">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 2. PAGE SPÉCIFIQUE IMMOBILIER -->
+            <!-- ========================================== -->
+            <div id="view-realestate" class="hidden space-y-8">
+                <!-- Real Estate Hero Header -->
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-emerald-500/20 bg-gradient-to-r from-slate-900 via-emerald-950/40 to-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <p class="text-slate-400 font-medium">🏠 Immobilier</p>
-                        <p id="subtotal-immobilier" class="text-sm font-bold text-slate-200 mt-0.5">0,00 €</p>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mb-3">
+                            <span>🏠</span> Gestion du Parc Immobilier & SCPI
+                        </div>
+                        <h2 class="text-3xl font-extrabold text-white">Patrimoine Immobilier</h2>
+                        <p class="text-xs text-slate-400 mt-1">Suivi des résidences, biens locatifs, cash-flow net et amortissement des emprunts.</p>
                     </div>
+
+                    <button onclick="openModalForCategory('Immobilier')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-5 py-3 rounded-2xl shadow-lg shadow-emerald-950/50 text-xs transition active:scale-95 flex items-center gap-2">
+                        <span>+</span> Ajouter un bien immobilier
+                    </button>
+                </div>
+
+                <!-- Real Estate Key Metrics -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Valeur Totale des Biens</p>
+                        <p id="immo-kpi-total" class="text-2xl font-black text-white mt-1">0,00 €</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Valeur vénale estimée</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Capital Restant Dû (Dettes)</p>
+                        <p id="immo-kpi-debt" class="text-2xl font-black text-rose-400 mt-1">0,00 €</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Total des crédits immo en cours</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Equity Nette (Valeur - Dette)</p>
+                        <p id="immo-kpi-equity" class="text-2xl font-black text-emerald-400 mt-1">0,00 €</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Patrimoine net immobilier réel</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Cash-Flow Net Locatif</p>
+                        <p id="immo-kpi-cashflow" class="text-2xl font-black text-emerald-400 mt-1">+0,00 €/m</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Loyers recouvré minus mensualités</span>
+                    </div>
+                </div>
+
+                <!-- Real Estate Dedicated Calculator Card -->
+                <div class="glass-panel p-6 rounded-3xl border border-slate-800">
+                    <h4 class="font-bold text-white text-sm mb-3 flex items-center gap-2">
+                        <span>🧮</span> Simulateur Instantané de Rendement Locatif Net
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Prix d'Achat + Notaire (€)</label>
+                            <input id="calc-immo-price" type="number" value="200000" oninput="calculateImmoYield()" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white outline-none focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Loyer Mensuel (€)</label>
+                            <input id="calc-immo-rent" type="number" value="900" oninput="calculateImmoYield()" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white outline-none focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Mensualité Crédit (€)</label>
+                            <input id="calc-immo-loan" type="number" value="750" oninput="calculateImmoYield()" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white outline-none focus:ring-1 focus:ring-emerald-500">
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 flex flex-col justify-center">
+                            <span class="text-[10px] text-slate-400">Rendement Brut / Cashflow</span>
+                            <div class="flex items-center justify-between mt-1">
+                                <span id="calc-yield-res" class="font-black text-emerald-400 text-sm">5,40 %</span>
+                                <span id="calc-cf-res" class="font-extrabold text-white text-xs">+150 €/mois</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real Estate Table -->
+                <div class="glass-panel rounded-3xl border border-slate-800 overflow-hidden">
+                    <div class="p-5 border-b border-slate-800">
+                        <h4 class="font-bold text-white text-base">Portefeuille d'Actifs Immobiliers</h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3.5 font-semibold">Nom du bien / Adresse</th>
+                                    <th class="px-6 py-3.5 font-semibold">Type de bien</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Valeur Venale</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Capital Restant Dû</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Loyer Mensuel</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Crédit Mensuel</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Cash-Flow Net</th>
+                                    <th class="px-6 py-3.5 font-semibold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="immo-table-body" class="divide-y divide-slate-800/60 text-slate-200">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 3. PAGE SPÉCIFIQUE BOURSE & ACTIONS -->
+            <!-- ========================================== -->
+            <div id="view-stocks" class="hidden space-y-8">
+                <!-- Stocks Hero Header -->
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-indigo-500/20 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <p class="text-slate-400 font-medium">📈 Bourse & Actions</p>
-                        <p id="subtotal-bourse" class="text-sm font-bold text-slate-200 mt-0.5">0,00 €</p>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 mb-3">
+                            <span>📈</span> Marches Financiers, PEA, CTO & Assurances-Vie
+                        </div>
+                        <h2 class="text-3xl font-extrabold text-white">Portefeuille Boursier</h2>
+                        <p class="text-xs text-slate-400 mt-1">Suivi du PRU, plus-values latentes, dividendes annuels et répartition des ETF/Actions.</p>
                     </div>
+
+                    <button onclick="openModalForCategory('Bourse')" class="bg-indigo-500 hover:bg-indigo-400 text-white font-extrabold px-5 py-3 rounded-2xl shadow-lg shadow-indigo-950/50 text-xs transition active:scale-95 flex items-center gap-2">
+                        <span>+</span> Ajouter un titre / ETF
+                    </button>
+                </div>
+
+                <!-- Stocks KPIs -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Valeur Totale Portefeuille</p>
+                        <p id="stocks-kpi-total" class="text-2xl font-black text-white mt-1">0,00 €</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Valeur de marché globale</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Montant Total Investi (PRU)</p>
+                        <p id="stocks-kpi-invested" class="text-2xl font-black text-slate-300 mt-1">0,00 €</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Capital net injecté</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Plus / Moins Value Globale</p>
+                        <p id="stocks-kpi-gain" class="text-2xl font-black text-emerald-400 mt-1">0,00 €</p>
+                        <span id="stocks-kpi-gain-pct" class="text-[10px] font-bold text-emerald-400 mt-1 block">+0,00%</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Dividendes Annuels Est.</p>
+                        <p id="stocks-kpi-div" class="text-2xl font-black text-indigo-400 mt-1">0,00 €/an</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Revenu passif boursier annuel</span>
+                    </div>
+                </div>
+
+                <!-- Stocks Table -->
+                <div class="glass-panel rounded-3xl border border-slate-800 overflow-hidden">
+                    <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+                        <h4 class="font-bold text-white text-base">Positions & Titres en Portefeuille</h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3.5 font-semibold">Titre / Symbole</th>
+                                    <th class="px-6 py-3.5 font-semibold">Enveloppe</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Quantité</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">PRU (Achat)</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Cours Actuel</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Valeur Totale</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Plus-Value Latente</th>
+                                    <th class="px-6 py-3.5 font-semibold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stocks-table-body" class="divide-y divide-slate-800/60 text-slate-200">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 4. PAGE SPÉCIFIQUE BANCAIRE & ÉPARGNE -->
+            <!-- ========================================== -->
+            <div id="view-banking" class="hidden space-y-8">
+                <!-- Banking Hero Header -->
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/20 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <p class="text-slate-400 font-medium">🏦 Comptes & Epargne</p>
-                        <p id="subtotal-bancaire" class="text-sm font-bold text-slate-200 mt-0.5">0,00 €</p>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 mb-3">
+                            <span>🏦</span> Livrets Reglementes, Comptes a Terme & Cash
+                        </div>
+                        <h2 class="text-3xl font-extrabold text-white">Épargne & Cash Disponibles</h2>
+                        <p class="text-xs text-slate-400 mt-1">Gestion de la liquidité immédiate, matelas de sécurité et intérêts d'épargne.</p>
                     </div>
+
+                    <button onclick="openModalForCategory('Bancaire')" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold px-5 py-3 rounded-2xl shadow-lg shadow-cyan-950/50 text-xs transition active:scale-95 flex items-center gap-2">
+                        <span>+</span> Ajouter un compte / livret
+                    </button>
+                </div>
+
+                <!-- Banking KPIs -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Total Liquidités & Épargne</p>
+                        <p id="banking-kpi-total" class="text-2xl font-black text-cyan-400 mt-1">0,00 €</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Disponible sans délai</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Intérêts Annuels Estimés</p>
+                        <p id="banking-kpi-interest" class="text-2xl font-black text-emerald-400 mt-1">+0,00 €/an</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Rendement passif des livrets</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Taux de Rendement Moyen</p>
+                        <p id="banking-kpi-rate" class="text-2xl font-black text-white mt-1">0,00 %</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Moyenne pondérée des taux</span>
+                    </div>
+                </div>
+
+                <!-- Banking Table -->
+                <div class="glass-panel rounded-3xl border border-slate-800 overflow-hidden">
+                    <div class="p-5 border-b border-slate-800">
+                        <h4 class="font-bold text-white text-base">Comptes, Livrets et Dépôts à Terme</h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3.5 font-semibold">Nom du compte / Établissement</th>
+                                    <th class="px-6 py-3.5 font-semibold">Type de support</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Taux d'Intérêt</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Solde Actuel</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Intérêts Annuels Est.</th>
+                                    <th class="px-6 py-3.5 font-semibold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="banking-table-body" class="divide-y divide-slate-800/60 text-slate-200">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 5. PAGE SPÉCIFIQUE ALTERNATIFS & CRYPTO -->
+            <!-- ========================================== -->
+            <div id="view-crypto" class="hidden space-y-8">
+                <!-- Crypto Hero Header -->
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-purple-500/20 bg-gradient-to-r from-slate-900 via-purple-950/40 to-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <p class="text-slate-400 font-medium">🛡️ Alternatifs & Crypto</p>
-                        <p id="subtotal-alternatifs" class="text-sm font-bold text-slate-200 mt-0.5">0,00 €</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Quick Access / Category Pills -->
-            <section>
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-slate-900">Accès rapide & Filtrage</h3>
-                    <span id="asset-count-badge" class="text-xs font-semibold bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">0 actif(s)</span>
-                </div>
-                
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    <button onclick="setCategoryFilter('ALL')" id="pill-ALL" class="p-4 bg-white border-2 border-indigo-600 rounded-2xl shadow-sm text-left transition hover:shadow-md">
-                        <div class="text-indigo-600 mb-1 text-xl">🌐</div>
-                        <p class="font-bold text-slate-900 text-sm">Tous les biens</p>
-                        <p class="text-xs text-slate-400 mt-0.5">Vue globale</p>
-                    </button>
-                    <button onclick="setCategoryFilter('Bancaire')" id="pill-Bancaire" class="p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-indigo-500 hover:shadow-md">
-                        <div class="text-indigo-600 mb-1 text-xl">🏦</div>
-                        <p class="font-bold text-slate-800 text-sm">Bancaire</p>
-                        <p class="text-xs text-slate-400 mt-0.5">Livrets & Comptes</p>
-                    </button>
-                    <button onclick="setCategoryFilter('Immobilier')" id="pill-Immobilier" class="p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-emerald-500 hover:shadow-md">
-                        <div class="text-emerald-600 mb-1 text-xl">🏠</div>
-                        <p class="font-bold text-slate-800 text-sm">Immobilier</p>
-                        <p class="text-xs text-slate-400 mt-0.5">Résidences & Locatif</p>
-                    </button>
-                    <button onclick="setCategoryFilter('Bourse')" id="pill-Bourse" class="p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-amber-500 hover:shadow-md">
-                        <div class="text-amber-600 mb-1 text-xl">📈</div>
-                        <p class="font-bold text-slate-800 text-sm">Bourse</p>
-                        <p class="text-xs text-slate-400 mt-0.5">Actions, PEA, CTO</p>
-                    </button>
-                    <button onclick="setCategoryFilter('Alternatifs')" id="pill-Alternatifs" class="p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-purple-500 hover:shadow-md col-span-2 sm:col-span-1">
-                        <div class="text-purple-600 mb-1 text-xl">🛡️</div>
-                        <p class="font-bold text-slate-800 text-sm">Alternatifs</p>
-                        <p class="text-xs text-slate-400 mt-0.5">Crypto & Assurances</p>
-                    </button>
-                </div>
-            </section>
-
-            <!-- Search & Assets Table Container -->
-            <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 items-center justify-between">
-                    <div class="relative w-full sm:w-80">
-                        <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input id="search-input" oninput="renderAssets()" type="text" placeholder="Rechercher (ex: Appartement, PEA, LVMH)..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/30 mb-3">
+                            <span>💎</span> Cryptomonnaies, Metaux Precieux, Private Equity & Luxe
+                        </div>
+                        <h2 class="text-3xl font-extrabold text-white">Investissements Alternatifs</h2>
+                        <p class="text-xs text-slate-400 mt-1">Suivi des actifs d'opportunité, métaux précieux, crypto-actifs et collectibles.</p>
                     </div>
 
-                    <div class="text-xs font-medium text-slate-500">
-                        Données synchronisées en temps réel
+                    <button onclick="openModalForCategory('Alternatifs')" class="bg-purple-500 hover:bg-purple-400 text-white font-extrabold px-5 py-3 rounded-2xl shadow-lg shadow-purple-950/50 text-xs transition active:scale-95 flex items-center gap-2">
+                        <span>+</span> Ajouter un actif alternatif
+                    </button>
+                </div>
+
+                <!-- Crypto KPIs -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Valeur Totale Alternatifs</p>
+                        <p id="crypto-kpi-total" class="text-2xl font-black text-purple-400 mt-1">0,00 €</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Valeur estimée marché</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Montant Investi (Achat)</p>
+                        <p id="crypto-kpi-invested" class="text-2xl font-black text-slate-300 mt-1">0,00 €</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Coût total d'acquisition</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Plus / Moins Value Latente</p>
+                        <p id="crypto-kpi-gain" class="text-2xl font-black text-emerald-400 mt-1">0,00 €</p>
+                        <span id="crypto-kpi-gain-pct" class="text-[10px] font-bold text-emerald-400 mt-1 block">+0,00%</span>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Part du Patrimoine Global</p>
+                        <p id="crypto-kpi-share" class="text-2xl font-black text-white mt-1">0,0%</p>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Exposition aux alternatifs</span>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                            <tr>
-                                <th class="px-6 py-4 font-semibold">Nom du bien / Actif</th>
-                                <th class="px-6 py-4 font-semibold">Catégorie</th>
-                                <th class="px-6 py-4 font-semibold">Détails / Qté</th>
-                                <th class="px-6 py-4 font-semibold">Prix Unitaire</th>
-                                <th class="px-6 py-4 font-semibold text-right">Valeur Totale</th>
-                                <th class="px-6 py-4 font-semibold text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="assets-list-body" class="divide-y divide-slate-100 text-sm">
-                            <tr>
-                                <td colspan="6" class="px-6 py-16 text-center text-slate-400">
-                                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mb-3"></div>
-                                    <p class="text-sm font-medium text-slate-600">Chargement de votre patrimoine...</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- Crypto Table -->
+                <div class="glass-panel rounded-3xl border border-slate-800 overflow-hidden">
+                    <div class="p-5 border-b border-slate-800">
+                        <h4 class="font-bold text-white text-base">Liste des Actifs Alternatifs & Crypto</h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3.5 font-semibold">Nom de l'Actif</th>
+                                    <th class="px-6 py-3.5 font-semibold">Type / Sous-Catégorie</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Quantité</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Prix d'Achat</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Prix Actuel</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Valeur Totale</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Plus-Value Latente</th>
+                                    <th class="px-6 py-3.5 font-semibold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crypto-table-body" class="divide-y divide-slate-800/60 text-slate-200">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </section>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 6. PAGE PROJECTIONS & STRATÉGIE -->
+            <!-- ========================================== -->
+            <div id="view-projections" class="hidden space-y-8">
+                <!-- Projections Hero Header -->
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-indigo-500/20 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 mb-3">
+                        <span>🔮</span> Simulateur d'Interets Composes & Trajectoire
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-white">Projection du Patrimoine sur 30 ans</h2>
+                    <p class="text-xs text-slate-400 mt-1">Simulez la croissance de vos investissements grâce aux versements programmés et au rendement composé.</p>
+                </div>
+
+                <!-- Simulation Interactive Input Panel -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+                        <h4 class="font-bold text-white text-base mb-2">Paramètres de Simulation</h4>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Patrimoine Initial de Départ (€)</label>
+                            <input id="proj-initial" type="number" value="50000" oninput="updateProjectionChart()" class="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Épargne Mensuelle Programmée (€/mois)</label>
+                            <input id="proj-monthly" type="number" value="800" oninput="updateProjectionChart()" class="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Rendement Annuel Moyen Estimé (%)</label>
+                            <input id="proj-rate" type="number" step="0.5" value="7.0" oninput="updateProjectionChart()" class="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Horizon Temporel (Années)</label>
+                            <input id="proj-years" type="number" value="20" max="40" min="1" oninput="updateProjectionChart()" class="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-800 text-xs text-slate-400 space-y-2">
+                            <div class="flex justify-between">
+                                <span>Capital Total Investi:</span>
+                                <strong id="proj-res-invested" class="text-white">0 €</strong>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Intérêts Composés Générés:</span>
+                                <strong id="proj-res-interest" class="text-emerald-400">0 €</strong>
+                            </div>
+                            <div class="flex justify-between text-sm pt-2 border-t border-slate-800">
+                                <span class="font-bold text-white">Patrimoine Final Estimé:</span>
+                                <strong id="proj-res-total" class="font-black text-indigo-400 text-base">0 €</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Projection Chart View -->
+                    <div class="glass-panel p-6 rounded-3xl border border-slate-800 lg:col-span-2 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-white text-base">Courbe de Capitalisation</h4>
+                            <p class="text-xs text-slate-400 mb-4">Combinaison du capital versé et des intérêts capitalisés</p>
+                        </div>
+                        <div class="flex-grow min-h-[300px]">
+                            <canvas id="projectionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
 
-    <!-- Modal: Admin Panel (Approve/Reject users) -->
-    <div id="admin-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 transform transition-all animate-fade-in">
-            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                <div class="flex items-center gap-2">
-                    <span class="text-2xl">👑</span>
-                    <div>
-                        <h3 class="text-xl font-bold text-slate-900">Administration - Gestion des Accès</h3>
-                        <p class="text-xs text-slate-500">Validez ou refusez l'accès des utilisateurs inscrits</p>
-                    </div>
-                </div>
-                <button onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-
-            <div class="max-h-96 overflow-y-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-200 sticky top-0">
-                        <tr>
-                            <th class="p-3 font-semibold">Email</th>
-                            <th class="p-3 font-semibold">Rôle</th>
-                            <th class="p-3 font-semibold">Statut</th>
-                            <th class="p-3 font-semibold text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-users-list" class="divide-y divide-slate-100">
-                        <tr>
-                            <td colspan="4" class="p-6 text-center text-slate-400">Chargement de la liste des utilisateurs...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-6 pt-4 border-t border-slate-100 text-right">
-                <button onclick="closeAdminModal()" class="px-5 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl">Fermer</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Add / Edit Asset -->
-    <div id="asset-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 transform transition-all animate-fade-in">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="modal-title" class="text-xl font-bold text-slate-900">Ajouter un actif</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    <!-- Unified Add / Edit Asset Modal -->
+    <div id="asset-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel max-w-lg w-full p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-2xl animate-fade-in relative text-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            
+            <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                <h3 id="modal-title" class="text-xl font-bold text-white">Ajouter un investissement</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition">
+                    ✕
                 </button>
             </div>
 
@@ -320,46 +755,82 @@
                 <input type="hidden" id="modal-asset-id">
                 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nom ou Libellé</label>
-                    <input id="modal-asset-name" type="text" required placeholder="ex: Appartement T3 Lille, PEA Boursorama, Livret A" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nom / Libellé de l'Actif</label>
+                    <input id="modal-asset-name" type="text" required placeholder="ex: SCPI Corum, PEA CW8, Livret A Bourso..." class="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Catégorie</label>
-                    <select id="modal-asset-category" onchange="toggleCategoryFields()" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-medium text-slate-700">
-                        <option value="Immobilier">🏠 Immobilier</option>
-                        <option value="Bourse">📈 Actions & Bourse</option>
-                        <option value="Bancaire">🏦 Compte Bancaire / Épargne</option>
-                        <option value="Alternatifs">🛡️ Crypto / Assurance / Alternatifs</option>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Classe d'Investissement</label>
+                    <select id="modal-asset-category" onchange="adjustModalFieldsByCategory()" class="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-200">
+                        <option value="Immobilier">🏠 Immobilier (Résidence, Locatif, SCPI)</option>
+                        <option value="Bourse">📈 Bourse (Actions, ETF, PEA, CTO)</option>
+                        <option value="Bancaire">🏦 Épargne (Livrets, CAT, Cash)</option>
+                        <option value="Alternatifs">💎 Alternatifs (Crypto, Métaux, Luxe)</option>
                     </select>
                 </div>
 
-                <!-- Unit-based assets -->
-                <div id="unit-fields" class="grid grid-cols-2 gap-3 hidden">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Quantité</label>
-                        <input id="modal-asset-qty" type="number" step="any" min="0" placeholder="ex: 15" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                <!-- Dynamic Category Specific Fields -->
+                <div id="field-group-immo" class="space-y-3 p-4 bg-slate-900/60 rounded-2xl border border-slate-800">
+                    <p class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Spécificités Immobilières</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Valeur Vénale (€)</label>
+                            <input id="modal-immo-value" type="number" placeholder="250000" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Capital Restant Dû (€)</label>
+                            <input id="modal-immo-debt" type="number" placeholder="180000" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Prix Unit. (€)</label>
-                        <input id="modal-asset-price" type="number" step="any" min="0" placeholder="ex: 650.00" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Loyer Mensuel (€)</label>
+                            <input id="modal-immo-rent" type="number" placeholder="950" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Mensualité Crédit (€)</label>
+                            <input id="modal-immo-loan" type="number" placeholder="820" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Direct valuation/balance assets -->
-                <div id="balance-field">
-                    <label id="balance-label" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Valeur estimée (€)</label>
-                    <div class="relative">
-                        <input id="modal-asset-balance" type="number" step="any" min="0" placeholder="250000" class="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">€</span>
+                <div id="field-group-unit" class="space-y-3 p-4 bg-slate-900/60 rounded-2xl border border-slate-800 hidden">
+                    <p class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Quantités & Cours Unitaire</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Quantité possédée</label>
+                            <input id="modal-unit-qty" type="number" step="any" placeholder="10" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">PRU / Prix Achat Unitaire (€)</label>
+                            <input id="modal-unit-pru" type="number" step="any" placeholder="400" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">Cours / Prix Actuel Unitaire (€)</label>
+                        <input id="modal-unit-current" type="number" step="any" placeholder="480" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                    </div>
+                </div>
+
+                <div id="field-group-banking" class="space-y-3 p-4 bg-slate-900/60 rounded-2xl border border-slate-800 hidden">
+                    <p class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Épargne & Taux</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Solde Actuel (€)</label>
+                            <input id="modal-bank-balance" type="number" placeholder="22950" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Taux d'Intérêt (%)</label>
+                            <input id="modal-bank-rate" type="number" step="0.1" placeholder="3.0" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                        </div>
                     </div>
                 </div>
 
                 <div class="pt-4 flex gap-3">
-                    <button type="button" onclick="closeModal()" class="w-1/2 px-4 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 text-sm transition">
+                    <button type="button" onclick="closeModal()" class="w-1/2 px-4 py-3 border border-slate-800 text-slate-400 font-semibold rounded-xl hover:bg-slate-800 text-xs transition">
                         Annuler
                     </button>
-                    <button type="submit" id="modal-submit-btn" class="w-1/2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-indigo-200 active:scale-95">
+                    <button type="submit" id="modal-submit-btn" class="w-1/2 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-indigo-900/40 active:scale-95">
                         Enregistrer
                     </button>
                 </div>
@@ -367,23 +838,17 @@
         </div>
     </div>
 
-    <!-- Modal: Delete Confirmation -->
-    <div id="delete-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-fade-in text-center">
-            <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 font-bold text-xl">
+    <!-- Modal Delete Confirmation -->
+    <div id="delete-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel max-w-sm w-full p-6 rounded-3xl border border-slate-800 text-center animate-fade-in">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto mb-3 font-bold text-xl border border-rose-500/20">
                 🗑️
             </div>
-            
-            <h3 class="text-lg font-bold text-slate-900 mb-1">Supprimer cet actif ?</h3>
-            <p class="text-xs text-slate-500 mb-6">Êtes-vous sûr de vouloir retirer <span id="delete-asset-name" class="font-semibold text-slate-800">cet actif</span> ? Cette action est irréversible.</p>
-
+            <h3 class="text-base font-bold text-white mb-1">Supprimer cet investissement ?</h3>
+            <p class="text-xs text-slate-400 mb-6">Êtes-vous sûr de vouloir retirer <span id="delete-asset-name" class="font-bold text-white">cet actif</span> de votre patrimoine ?</p>
             <div class="flex gap-3">
-                <button onclick="closeDeleteModal()" class="w-1/2 px-4 py-2.5 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 text-sm transition">
-                    Annuler
-                </button>
-                <button onclick="confirmDeleteAsset()" class="w-1/2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl text-sm transition shadow-md shadow-red-200 active:scale-95">
-                    Supprimer
-                </button>
+                <button onclick="closeDeleteModal()" class="w-1/2 py-2.5 border border-slate-800 text-slate-300 rounded-xl text-xs hover:bg-slate-800 font-semibold">Annuler</button>
+                <button onclick="confirmDeleteAsset()" class="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-950">Supprimer</button>
             </div>
         </div>
     </div>
@@ -391,14 +856,13 @@
     <!-- Toast Notification Box -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- JavaScript Logic & Firebase module integration -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global environment bindings
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'solution-client-c9f55';
+        // Global Firebase Configuration
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wealthmanager-pro-app';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyC44TI-kF0B-E999nxSq0mpn5me6Ncay4s",
             authDomain: "solution-client-c9f55.firebaseapp.com",
@@ -409,273 +873,178 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Application State
         let rawAssets = [];
-        let allUsersList = [];
-        let activeCategoryFilter = 'ALL';
-        let assetToDeleteId = null;
         let currentUser = null;
-        let currentUserProfile = null;
-        let authMode = 'login'; // 'login' or 'signup'
-        let unsubscribeUserStatus = null;
-        let unsubscribeAdminUsers = null;
+        let authMode = 'login';
+        let currentView = 'overview';
+        let assetToDeleteId = null;
 
-        const categoryMeta = {
-            'Immobilier': { label: 'Immobilier', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: '🏠', isUnit: false, labelBalance: 'Valeur du bien (€)' },
-            'Bourse': { label: 'Bourse & Actions', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', icon: '📈', isUnit: true },
-            'Bancaire': { label: 'Bancaire & Épargne', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', icon: '🏦', isUnit: false, labelBalance: 'Solde courant / épargne (€)' },
-            'Alternatifs': { label: 'Alternatifs & Crypto', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', icon: '🛡️', isUnit: false, labelBalance: 'Valeur du contrat / portfolio (€)' }
-        };
+        // Chart Instances
+        let overviewAllocationChartInstance = null;
+        let overviewGrowthChartInstance = null;
+        let projectionChartInstance = null;
 
-        // Formatters
+        // Helper formatters
         const formatEUR = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val || 0);
+        const formatPCT = (val) => (val >= 0 ? '+' : '') + (val || 0).toFixed(2) + '%';
         const formatQty = (val) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 4 }).format(val || 0);
 
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            const bgClass = type === 'success' ? 'bg-slate-900 text-white' : 'bg-red-600 text-white';
-            toast.className = `${bgClass} px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2 animate-fade-in pointer-events-auto border border-white/10`;
-            toast.innerHTML = `
-                <span>${type === 'success' ? '✓' : '⚠️'}</span>
-                <span>${message}</span>
-            `;
+            const bgClass = type === 'success' ? 'bg-slate-900 border-emerald-500/40 text-emerald-300' : 'bg-rose-950 border-rose-500/40 text-rose-300';
+            toast.className = `${bgClass} px-4 py-3 rounded-2xl border shadow-2xl text-xs font-semibold flex items-center gap-2 animate-fade-in pointer-events-auto backdrop-blur-md`;
+            toast.innerHTML = `<span>${type === 'success' ? '✓' : '⚠️'}</span><span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
-                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                toast.classList.add('opacity-0', 'transition-opacity');
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
         }
 
-        onAuthStateChanged(auth, async (user) => {
-            if (unsubscribeUserStatus) {
-                unsubscribeUserStatus();
-                unsubscribeUserStatus = null;
-            }
+        // Single-Page View Navigation Switcher
+        window.switchView = (viewId) => {
+            currentView = viewId;
+            const views = ['overview', 'realestate', 'stocks', 'banking', 'crypto', 'projections'];
+            
+            views.forEach(v => {
+                const viewEl = document.getElementById(`view-${v}`);
+                const navBtn = document.getElementById(`nav-${v}`);
+                const mnavBtn = document.getElementById(`mnav-${v}`);
+                
+                if (viewEl) viewEl.classList.add('hidden');
+                if (navBtn) navBtn.className = "px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2";
+                if (mnavBtn) mnavBtn.className = "whitespace-nowrap px-3.5 py-1.5 rounded-xl text-slate-400 hover:bg-slate-800";
+            });
 
+            const activeEl = document.getElementById(`view-${viewId}`);
+            const activeNav = document.getElementById(`nav-${viewId}`);
+            const activeMNav = document.getElementById(`mnav-${viewId}`);
+
+            if (activeEl) activeEl.classList.remove('hidden');
+            if (activeNav) activeNav.className = "px-4 py-2 rounded-xl transition flex items-center gap-2 text-indigo-400 bg-indigo-500/10 border border-indigo-500/30 font-bold";
+            if (activeMNav) activeMNav.className = "whitespace-nowrap px-3.5 py-1.5 rounded-xl text-indigo-400 bg-indigo-500/10 border border-indigo-500/30 font-bold";
+
+            // Trigger specialized view renders/charts
+            if (viewId === 'overview') {
+                renderOverviewTable();
+                renderOverviewCharts();
+            } else if (viewId === 'realestate') {
+                renderRealEstatePage();
+            } else if (viewId === 'stocks') {
+                renderStocksPage();
+            } else if (viewId === 'banking') {
+                renderBankingPage();
+            } else if (viewId === 'crypto') {
+                renderCryptoPage();
+            } else if (viewId === 'projections') {
+                updateProjectionChart();
+            }
+        };
+
+        // Firebase Auth Observer
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('hidden');
                 document.getElementById('auth-status').classList.remove('hidden');
                 document.getElementById('btn-logout').classList.remove('hidden');
                 document.getElementById('user-id-display').innerText = user.email || `ID: ${user.uid.substring(0, 8)}`;
-                document.getElementById('pending-user-email').innerText = user.email || user.uid;
 
-                // Monitor User Profile document in public collection for real-time approval status updates
-                const userProfileRef = doc(db, 'artifacts', appId, 'public', 'data', 'userProfiles', user.uid);
-                
-                unsubscribeUserStatus = onSnapshot(userProfileRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        currentUserProfile = docSnap.data();
-                    } else {
-                        // Profile missing, create standard pending or admin profile
-                        currentUserProfile = {
-                            email: user.email || 'Invite@demo.com',
-                            role: 'user',
-                            status: 'pending',
-                            createdAt: Date.now()
-                        };
-                        setDoc(userProfileRef, currentUserProfile, { merge: true });
+                // Subscribe to realtime assets
+                const assetsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'assets');
+                onSnapshot(assetsRef, async (snapshot) => {
+                    rawAssets = [];
+                    snapshot.forEach((doc) => {
+                        rawAssets.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    // Seed default sample demo data ONLY ON INITIAL SETUP (First load of fresh user)
+                    const seededKey = `wm_seeded_${user.uid}`;
+                    if (rawAssets.length === 0 && !localStorage.getItem(seededKey)) {
+                        localStorage.setItem(seededKey, 'true');
+                        await seedSampleData(user.uid);
+                        return;
                     }
 
-                    handleAccessControl(currentUserProfile);
-                }, (err) => {
-                    console.error("Error fetching user status:", err);
-                    showToast("Erreur lors de la vérification de vos droits", "error");
+                    rawAssets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    calculateAllMetrics();
+                    switchView(currentView);
+                }, (error) => {
+                    console.error("Firestore sync error:", error);
+                    showToast("Erreur de synchronisation", "error");
                 });
-
             } else {
                 currentUser = null;
-                currentUserProfile = null;
                 document.getElementById('loginSection').classList.remove('hidden');
-                document.getElementById('pendingSection').classList.add('hidden');
-                document.getElementById('rejectedSection').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.add('hidden');
+                document.getElementById('appContainer').classList.add('hidden');
                 document.getElementById('auth-status').classList.add('hidden');
                 document.getElementById('btn-logout').classList.add('hidden');
-                document.getElementById('btn-admin-panel').classList.add('hidden');
             }
         });
 
-        function handleAccessControl(profile) {
-            const statusDot = document.getElementById('status-dot');
-            const adminBtn = document.getElementById('btn-admin-panel');
+        // Seed rich realistic sample data for zero-state users
+        async function seedSampleData(uid) {
+            const samples = [
+                { name: "Appartement T3 Lyon 3e", category: "Immobilier", value: 245000, debt: 165000, rent: 920, loan: 780, createdAt: Date.now() - 5000 },
+                { name: "SCPI Corum Origin", category: "Immobilier", value: 18000, debt: 0, rent: 85, loan: 0, createdAt: Date.now() - 4000 },
+                { name: "ETF iShares MSCI World (CW8)", category: "Bourse", qty: 85, pru: 410, currentPrice: 495, createdAt: Date.now() - 3000 },
+                { name: "LVMH (MC.PA)", category: "Bourse", qty: 6, pru: 670, currentPrice: 740, createdAt: Date.now() - 2500 },
+                { name: "Livret A BoursoBank", category: "Bancaire", balance: 22950, rate: 3.0, createdAt: Date.now() - 2000 },
+                { name: "Compte à Terme (CAT) 12M", category: "Bancaire", balance: 15000, rate: 3.8, createdAt: Date.now() - 1500 },
+                { name: "Bitcoin (BTC)", category: "Alternatifs", qty: 0.32, pru: 38000, currentPrice: 61500, createdAt: Date.now() - 1000 },
+                { name: "Lingot Or 100g", category: "Alternatifs", qty: 1, pru: 6200, currentPrice: 7150, createdAt: Date.now() - 500 }
+            ];
 
-            // Toggle admin features
-            if (profile.role === 'admin') {
-                adminBtn.classList.remove('hidden');
-                listenToAllUsersForAdmin();
-            } else {
-                adminBtn.classList.add('hidden');
-            }
-
-            if (profile.status === 'approved') {
-                statusDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
-                document.getElementById('pendingSection').classList.add('hidden');
-                document.getElementById('rejectedSection').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.remove('hidden');
-
-                // Subscribe to user assets
-                subscribeToUserAssets();
-            } else if (profile.status === 'rejected') {
-                statusDot.className = "w-2 h-2 rounded-full bg-red-500";
-                document.getElementById('pendingSection').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.add('hidden');
-                document.getElementById('rejectedSection').classList.remove('hidden');
-            } else {
-                // Pending status
-                statusDot.className = "w-2 h-2 rounded-full bg-amber-500 animate-ping";
-                document.getElementById('dashboardSection').classList.add('hidden');
-                document.getElementById('rejectedSection').classList.add('hidden');
-                document.getElementById('pendingSection').classList.remove('hidden');
+            const colRef = collection(db, 'artifacts', appId, 'users', uid, 'assets');
+            for (const item of samples) {
+                await addDoc(colRef, item);
             }
         }
 
-        window.checkUserApprovalStatus = () => {
-            if (currentUserProfile && currentUserProfile.status === 'approved') {
-                showToast("Accès validé ! Chargement du tableau de bord...");
-            } else {
-                showToast("Votre compte est toujours en attente de validation", "error");
-            }
+        window.restoreDemoData = async () => {
+            if (!currentUser) return;
+            showToast("Génération des exemples de démonstration...");
+            await seedSampleData(currentUser.uid);
         };
 
-        function subscribeToUserAssets() {
-            if (!currentUser) return;
-            const assetsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'assets');
-            onSnapshot(assetsRef, (snapshot) => {
-                rawAssets = [];
-                snapshot.forEach((doc) => {
-                    rawAssets.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-
-                rawAssets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                updateCalculatedTotals();
-                renderAssets();
-            }, (error) => {
-                console.error("Firestore sync error:", error);
-                showToast("Erreur de synchronisation", "error");
-            });
-        }
-
-        function listenToAllUsersForAdmin() {
-            if (unsubscribeAdminUsers) return;
-
-            const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'userProfiles');
-            unsubscribeAdminUsers = onSnapshot(usersRef, (snapshot) => {
-                allUsersList = [];
-                let pendingCount = 0;
-
-                snapshot.forEach((docSnap) => {
-                    const uData = { uid: docSnap.id, ...docSnap.data() };
-                    allUsersList.push(uData);
-                    if (uData.status === 'pending') pendingCount++;
-                });
-
-                const badge = document.getElementById('pending-count-badge');
-                if (pendingCount > 0) {
-                    badge.innerText = pendingCount;
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.classList.add('hidden');
-                }
-
-                renderAdminUsersTable();
-            });
-        }
-
+        // Auth Form Handlers
         window.switchAuthTab = (mode) => {
             authMode = mode;
-            const loginBtn = document.getElementById('tab-login-btn');
-            const signupBtn = document.getElementById('tab-signup-btn');
-            const submitBtn = document.getElementById('authSubmitBtn');
-            const infoBanner = document.getElementById('signup-info-banner');
-
-            if (mode === 'login') {
-                loginBtn.className = "w-1/2 py-2 border-b-2 border-indigo-600 text-indigo-600 transition";
-                signupBtn.className = "w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition";
-                submitBtn.innerText = "Se connecter";
-                infoBanner.classList.add('hidden');
-            } else {
-                signupBtn.className = "w-1/2 py-2 border-b-2 border-indigo-600 text-indigo-600 transition";
-                loginBtn.className = "w-1/2 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition";
-                submitBtn.innerText = "Soumettre ma demande d'accès";
-                infoBanner.classList.remove('hidden');
-            }
+            document.getElementById('tab-login-btn').className = mode === 'login' ? "w-1/2 py-2.5 border-b-2 border-indigo-500 text-indigo-400 transition" : "w-1/2 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition";
+            document.getElementById('tab-signup-btn').className = mode === 'signup' ? "w-1/2 py-2.5 border-b-2 border-indigo-500 text-indigo-400 transition" : "w-1/2 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition";
+            document.getElementById('authSubmitBtn').innerText = mode === 'login' ? "Se connecter" : "Créer un compte";
         };
 
-        window.handleAuthSubmit = async (event) => {
-            event.preventDefault();
+        window.handleAuthSubmit = async (e) => {
+            e.preventDefault();
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            const btn = document.getElementById('authSubmitBtn');
-
-            btn.disabled = true;
-            btn.innerText = "Traitement en cours...";
-
             try {
                 if (authMode === 'login') {
                     await signInWithEmailAndPassword(auth, email, password);
                     showToast("Connexion réussie !");
                 } else {
-                    // Check if any users exist in the system yet
-                    const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'userProfiles');
-                    const existingUsersSnap = await getDocs(usersRef);
-                    const isFirstUser = existingUsersSnap.empty;
-
-                    const userCred = await createUserWithEmailAndPassword(auth, email, password);
-                    const newUid = userCred.user.uid;
-
-                    // Create user profile in public collection with pending or admin role
-                    const newProfile = {
-                        email: email,
-                        role: isFirstUser ? 'admin' : 'user',
-                        status: isFirstUser ? 'approved' : 'pending',
-                        createdAt: Date.now()
-                    };
-
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'userProfiles', newUid), newProfile);
-
-                    if (isFirstUser) {
-                        showToast("Compte administrateur créé et validé !");
-                    } else {
-                        showToast("Demande transmise ! Votre compte est en attente de validation.");
-                    }
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    showToast("Compte créé avec succès !");
                 }
             } catch (err) {
-                console.error("Auth error:", err);
-                showToast(err.message || "Identifiants incorrects ou accès refusé", "error");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = authMode === 'login' ? "Se connecter" : "Soumettre ma demande d'accès";
+                showToast(err.message || "Erreur d'authentification", "error");
             }
         };
 
         window.handleDemoLogin = async () => {
             try {
-                let userCred;
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    userCred = await signInWithCustomToken(auth, __initial_auth_token);
+                    await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    userCred = await signInAnonymously(auth);
+                    await signInAnonymously(auth);
                 }
-
-                if (userCred && userCred.user) {
-                    // Ensure guest/demo profile is marked as approved automatically
-                    const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'userProfiles', userCred.user.uid);
-                    await setDoc(profileRef, {
-                        email: 'demo@guest.com',
-                        role: 'user',
-                        status: 'approved',
-                        createdAt: Date.now()
-                    }, { merge: true });
-                }
-
-                showToast("Accès démo activé !");
+                showToast("Accès Démo activé !");
             } catch (e) {
-                console.error("Demo login error:", e);
-                showToast("Impossible d'activer le mode démo", "error");
+                showToast("Erreur du mode démo", "error");
             }
         };
 
@@ -684,250 +1053,588 @@
             showToast("Déconnecté avec succès");
         };
 
-        window.openAdminModal = () => {
-            renderAdminUsersTable();
-            document.getElementById('admin-modal').classList.remove('hidden');
-        };
+        // Calculations & Financial Core Engine
+        function getAssetComputedValues(a) {
+            const cat = a.category || 'Immobilier';
+            let currentValue = 0;
+            let investedValue = 0;
+            let debt = 0;
+            let monthlyCashflow = 0;
 
-        window.closeAdminModal = () => {
-            document.getElementById('admin-modal').classList.add('hidden');
-        };
-
-        function renderAdminUsersTable() {
-            const tbody = document.getElementById('admin-users-list');
-            if (!tbody) return;
-
-            if (allUsersList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">Aucun utilisateur enregistré.</td></tr>`;
-                return;
+            if (cat === 'Immobilier') {
+                currentValue = parseFloat(a.value) || 0;
+                debt = parseFloat(a.debt) || 0;
+                investedValue = currentValue - debt;
+                const rent = parseFloat(a.rent) || 0;
+                const loan = parseFloat(a.loan) || 0;
+                monthlyCashflow = rent - loan;
+            } else if (cat === 'Bourse' || cat === 'Alternatifs') {
+                const qty = parseFloat(a.qty) || 0;
+                const pru = parseFloat(a.pru) || 0;
+                const curPrice = parseFloat(a.currentPrice) || pru;
+                currentValue = qty * curPrice;
+                investedValue = qty * pru;
+            } else if (cat === 'Bancaire') {
+                currentValue = parseFloat(a.balance) || 0;
+                investedValue = currentValue;
             }
 
-            tbody.innerHTML = allUsersList.map(u => {
-                const isCurrent = currentUser && currentUser.uid === u.uid;
-                let statusBadge = '';
-                if (u.status === 'approved') {
-                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Approuvé</span>`;
-                } else if (u.status === 'rejected') {
-                    statusBadge = `<span class="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Refusé</span>`;
-                } else {
-                    statusBadge = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">En attente</span>`;
-                }
+            const gain = currentValue - investedValue;
+            const gainPct = investedValue > 0 ? (gain / investedValue) * 100 : 0;
 
-                return `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="p-3 font-semibold text-slate-800">
-                            ${escapeHtml(u.email || u.uid)}
-                            ${isCurrent ? ' <span class="text-[10px] text-indigo-600 font-bold">(Vous)</span>' : ''}
-                        </td>
-                        <td class="p-3 text-xs font-medium text-slate-500 uppercase">
-                            ${u.role === 'admin' ? '👑 Admin' : 'Utilisateur'}
-                        </td>
-                        <td class="p-3">${statusBadge}</td>
-                        <td class="p-3 text-center">
-                            ${isCurrent ? '<span class="text-xs text-slate-400">-</span>' : `
-                                <div class="flex items-center justify-center gap-1">
-                                    ${u.status !== 'approved' ? `
-                                        <button onclick="updateUserStatus('${u.uid}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-2.5 py-1 rounded-lg transition shadow-sm">
-                                            ✓ Valider
-                                        </button>
-                                    ` : ''}
-                                    ${u.status !== 'rejected' ? `
-                                        <button onclick="updateUserStatus('${u.uid}', 'rejected')" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-lg transition">
-                                            ✕ Refuser
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            `}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            return { currentValue, investedValue, debt, monthlyCashflow, gain, gainPct };
         }
 
-        window.updateUserStatus = async (uid, newStatus) => {
-            try {
-                const uRef = doc(db, 'artifacts', appId, 'public', 'data', 'userProfiles', uid);
-                await updateDoc(uRef, { status: newStatus });
-                showToast(newStatus === 'approved' ? "Accès validé avec succès !" : "Demande refusée.");
-            } catch (err) {
-                console.error("Failed to update status:", err);
-                showToast("Erreur lors de la mise à jour du statut", "error");
-            }
-        };
+        function calculateAllMetrics() {
+            let totalBrut = 0;
+            let totalDebt = 0;
+            let totalCashflow = 0;
+            let totalPlusValue = 0;
 
-        function calculateAssetValue(asset) {
-            const cat = categoryMeta[asset.category] || categoryMeta['Immobilier'];
-            if (cat.isUnit) {
-                const q = parseFloat(asset.qty) || 0;
-                const p = parseFloat(asset.price) || 0;
-                return q * p;
-            }
-            return parseFloat(asset.balance) || parseFloat(asset.value) || parseFloat(asset.amount) || 0;
-        }
+            let immoBrut = 0, immoDebt = 0, immoCashflow = 0, immoCount = 0;
+            let stocksBrut = 0, stocksInvested = 0, stocksCount = 0;
+            let bankBrut = 0, bankInterest = 0, bankCount = 0;
+            let cryptoBrut = 0, cryptoInvested = 0, cryptoCount = 0;
 
-        function updateCalculatedTotals() {
-            let total = 0;
-            let subImmo = 0, subBourse = 0, subBancaire = 0, subAlt = 0;
+            rawAssets.forEach(a => {
+                const v = getAssetComputedValues(a);
+                totalBrut += v.currentValue;
+                totalDebt += v.debt;
+                totalCashflow += v.monthlyCashflow;
+                totalPlusValue += v.gain;
 
-            rawAssets.forEach(item => {
-                const val = calculateAssetValue(item);
-                total += val;
-
-                const c = item.category || 'Immobilier';
-                if (c === 'Immobilier') subImmo += val;
-                else if (c === 'Bourse') subBourse += val;
-                else if (c === 'Bancaire') subBancaire += val;
-                else subAlt += val;
-            });
-
-            document.getElementById('total-patrimoine').innerText = formatEUR(total);
-            document.getElementById('subtotal-immobilier').innerText = formatEUR(subImmo);
-            document.getElementById('subtotal-bourse').innerText = formatEUR(subBourse);
-            document.getElementById('subtotal-bancaire').innerText = formatEUR(subBancaire);
-            document.getElementById('subtotal-alternatifs').innerText = formatEUR(subAlt);
-            document.getElementById('asset-count-badge').innerText = `${rawAssets.length} actif(s)`;
-        }
-
-        window.setCategoryFilter = (category) => {
-            activeCategoryFilter = category;
-            
-            ['ALL', 'Bancaire', 'Immobilier', 'Bourse', 'Alternatifs'].forEach(cat => {
-                const btn = document.getElementById(`pill-${cat}`);
-                if (!btn) return;
-                if (cat === category) {
-                    btn.className = "p-4 bg-white border-2 border-indigo-600 rounded-2xl shadow-md text-left transition";
-                } else {
-                    btn.className = "p-4 bg-white border border-slate-200 rounded-2xl text-left transition hover:border-indigo-400 hover:shadow-sm";
+                if (a.category === 'Immobilier') {
+                    immoBrut += v.currentValue;
+                    immoDebt += v.debt;
+                    immoCashflow += v.monthlyCashflow;
+                    immoCount++;
+                } else if (a.category === 'Bourse') {
+                    stocksBrut += v.currentValue;
+                    stocksInvested += v.investedValue;
+                    stocksCount++;
+                } else if (a.category === 'Bancaire') {
+                    bankBrut += v.currentValue;
+                    const rate = parseFloat(a.rate) || 0;
+                    bankInterest += (v.currentValue * rate) / 100;
+                    bankCount++;
+                } else if (a.category === 'Alternatifs') {
+                    cryptoBrut += v.currentValue;
+                    cryptoInvested += v.investedValue;
+                    cryptoCount++;
                 }
             });
 
-            renderAssets();
-        };
+            const totalNet = totalBrut - totalDebt;
 
-        window.renderAssets = () => {
-            const tbody = document.getElementById('assets-list-body');
-            const search = (document.getElementById('search-input').value || '').toLowerCase();
+            // Overview Dashboard KPIs
+            document.getElementById('total-patrimoine-net').innerText = formatEUR(totalNet);
+            document.getElementById('total-patrimoine-brut').innerText = formatEUR(totalBrut);
+            document.getElementById('total-dettes-immo').innerText = formatEUR(totalDebt);
+            document.getElementById('total-plus-value').innerText = formatEUR(totalPlusValue);
+            document.getElementById('total-cashflow-mensuel').innerText = `${totalCashflow >= 0 ? '+' : ''}${formatEUR(totalCashflow)} / mois`;
+
+            // Overview Category Cards
+            document.getElementById('card-immo-value').innerText = formatEUR(immoBrut);
+            document.getElementById('card-immo-count').innerText = immoCount;
+            document.getElementById('card-immo-cashflow').innerText = `${immoCashflow >= 0 ? '+' : ''}${formatEUR(immoCashflow)}/m`;
+
+            document.getElementById('card-stocks-value').innerText = formatEUR(stocksBrut);
+            document.getElementById('card-stocks-count').innerText = stocksCount;
+            document.getElementById('card-stocks-div').innerText = `${formatEUR(stocksBrut * 0.025)}/an`;
+
+            document.getElementById('card-banking-value').innerText = formatEUR(bankBrut);
+            document.getElementById('card-banking-count').innerText = bankCount;
+            document.getElementById('card-banking-rate').innerText = `${bankBrut > 0 ? ((bankInterest / bankBrut) * 100).toFixed(1) : '0.0'}%`;
+
+            document.getElementById('card-crypto-value').innerText = formatEUR(cryptoBrut);
+            document.getElementById('card-crypto-count').innerText = cryptoCount;
+            document.getElementById('card-crypto-share').innerText = `${totalBrut > 0 ? ((cryptoBrut / totalBrut) * 100).toFixed(1) : '0'}%`;
+        }
+
+        // Render Consolidated Overview Table
+        window.renderOverviewTable = () => {
+            const tbody = document.getElementById('overview-table-body');
+            const search = (document.getElementById('overview-search').value || '').toLowerCase();
+            const filterCat = document.getElementById('overview-filter').value;
 
             const filtered = rawAssets.filter(a => {
-                const matchesSearch = (a.name || '').toLowerCase().includes(search);
-                const matchesCat = activeCategoryFilter === 'ALL' || (a.category || 'Immobilier') === activeCategoryFilter;
-                return matchesSearch && matchesCat;
+                const matchSearch = (a.name || '').toLowerCase().includes(search);
+                const matchCat = filterCat === 'ALL' || a.category === filterCat;
+                return matchSearch && matchCat;
             });
 
             if (filtered.length === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="6" class="px-6 py-12 text-center text-slate-400">
-                            <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3 font-bold text-xl">
-                                📂
+                            <div class="max-w-sm mx-auto space-y-3">
+                                <p class="text-sm font-semibold text-slate-300">Votre portefeuille ne contient actuellement aucun actif.</p>
+                                <p class="text-xs text-slate-500">Ajoutez vos propres investissements avec le bouton "+ Ajouter un actif" ou chargez à tout moment les données exemple de démo.</p>
+                                <div class="pt-2 flex items-center justify-center gap-3">
+                                    <button onclick="openGenericAddModal()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">
+                                        + Ajouter un actif
+                                    </button>
+                                    <button onclick="restoreDemoData()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-semibold transition">
+                                        🔄 Recharger la démo
+                                    </button>
+                                </div>
                             </div>
-                            <h4 class="font-bold text-slate-700 mb-1">Aucun actif trouvé</h4>
-                            <p class="text-xs text-slate-400 mb-4">${rawAssets.length === 0 ? 'Commencez par ajouter votre premier bien immobilier, compte ou action.' : 'Aucun résultat ne correspond à votre recherche.'}</p>
-                            ${rawAssets.length === 0 ? `<button onclick="openAddModal()" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm hover:bg-indigo-700 transition">+ Ajouter un actif</button>` : ''}
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(a => {
-                const cat = categoryMeta[a.category] || categoryMeta['Immobilier'];
-                const totalVal = calculateAssetValue(a);
+                const v = getAssetComputedValues(a);
+                const iconMap = { Immobilier: '🏠', Bourse: '📈', Bancaire: '🏦', Alternatifs: '💎' };
+                const badgeMap = { Immobilier: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', Bourse: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20', Bancaire: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20', Alternatifs: 'text-purple-400 bg-purple-500/10 border-purple-500/20' };
+
+                let detail = '-';
+                if (a.category === 'Immobilier') detail = `Loyer: ${formatEUR(a.rent)}/m | Dette: ${formatEUR(a.debt)}`;
+                else if (a.category === 'Bourse' || a.category === 'Alternatifs') detail = `${formatQty(a.qty)} unité(s) @ ${formatEUR(a.currentPrice)}`;
+                else if (a.category === 'Bancaire') detail = `Taux: ${a.rate || 0}%`;
 
                 return `
-                    <tr class="hover:bg-slate-50 transition-colors group">
-                        <td class="px-6 py-4 font-bold text-slate-900">
-                            <div class="flex items-center gap-3">
-                                <span class="text-xl p-2 bg-slate-100 rounded-xl">${cat.icon}</span>
-                                <span>${escapeHtml(a.name)}</span>
-                            </div>
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="px-6 py-4 font-bold text-white flex items-center gap-2.5">
+                            <span class="p-1.5 bg-slate-900 border border-slate-800 rounded-lg">${iconMap[a.category] || '🌐'}</span>
+                            <span>${escapeHtml(a.name)}</span>
                         </td>
-
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${cat.bg} ${cat.text} ${cat.border} border">
-                                ${cat.label}
-                            </span>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border ${badgeMap[a.category]}">${a.category}</span>
                         </td>
-
-                        <td class="px-6 py-4 text-slate-700 font-medium">
-                            ${cat.isUnit ? formatQty(a.qty) + ' unité(s)' : 'Valeur Fixe / Solde'}
+                        <td class="px-6 py-4 text-slate-400 font-medium">${detail}</td>
+                        <td class="px-6 py-4 font-extrabold text-white text-right">${formatEUR(v.currentValue)}</td>
+                        <td class="px-6 py-4 text-right font-bold ${v.gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                            ${v.gain >= 0 ? '+' : ''}${formatEUR(v.gain)} (${formatPCT(v.gainPct)})
                         </td>
-
-                        <td class="px-6 py-4 text-slate-700">
-                            ${cat.isUnit ? formatEUR(a.price) : '-'}
-                        </td>
-
-                        <td class="px-6 py-4 font-extrabold text-slate-900 text-right text-base">
-                            ${formatEUR(totalVal)}
-                        </td>
-
                         <td class="px-6 py-4 text-center">
-                            <div class="flex items-center justify-center gap-1">
-                                <button onclick="openEditModal('${a.id}')" title="Modifier" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                </button>
-                                <button onclick="openDeleteModal('${a.id}', '${escapeHtml(a.name)}')" title="Supprimer" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                </button>
-                            </div>
+                            <button onclick="openEditModal('${a.id}')" title="Éditer" class="p-1.5 text-slate-400 hover:text-indigo-400">✏️</button>
+                            <button onclick="openDeleteModal('${a.id}', '${escapeHtml(a.name)}')" title="Supprimer" class="p-1.5 text-slate-400 hover:text-rose-400">🗑️</button>
                         </td>
                     </tr>
                 `;
             }).join('');
         };
 
-        function escapeHtml(str) {
-            return (str || '').replace(/[&<>"']/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        // Render Charts for Homepage / Overview
+        function renderOverviewCharts() {
+            // Donut Chart Allocation
+            const ctxDonut = document.getElementById('overviewAllocationChart')?.getContext('2d');
+            if (!ctxDonut) return;
+
+            let catSums = { Immobilier: 0, Bourse: 0, Bancaire: 0, Alternatifs: 0 };
+            rawAssets.forEach(a => {
+                const v = getAssetComputedValues(a);
+                catSums[a.category] = (catSums[a.category] || 0) + v.currentValue;
+            });
+
+            if (overviewAllocationChartInstance) overviewAllocationChartInstance.destroy();
+
+            overviewAllocationChartInstance = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Immobilier', 'Bourse', 'Épargne', 'Alternatifs'],
+                    datasets: [{
+                        data: [catSums.Immobilier, catSums.Bourse, catSums.Bancaire, catSums.Alternatifs],
+                        backgroundColor: ['#10b981', '#6366f1', '#06b6d4', '#a855f7'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } } }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Growth Trajectory Line Chart
+            const ctxLine = document.getElementById('overviewGrowthChart')?.getContext('2d');
+            if (!ctxLine) return;
+
+            const totalBrut = rawAssets.reduce((acc, a) => acc + getAssetComputedValues(a).currentValue, 0);
+            const months = ['M-11', 'M-10', 'M-9', 'M-8', 'M-7', 'M-6', 'M-5', 'M-4', 'M-3', 'M-2', 'M-1', 'Aujourd\'hui'];
+            
+            // Simulating realistic historical growth curve leading up to current asset value
+            const historyData = months.map((m, idx) => {
+                if (totalBrut === 0) return 0;
+                const factor = 0.78 + (idx * 0.02) + (Math.sin(idx) * 0.015);
+                return Math.round(totalBrut * factor);
+            });
+            if (totalBrut > 0) historyData[11] = totalBrut;
+
+            if (overviewGrowthChartInstance) overviewGrowthChartInstance.destroy();
+
+            overviewGrowthChartInstance = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Patrimoine Brut (€)',
+                        data: historyData,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#818cf8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
             });
         }
 
-        window.toggleCategoryFields = () => {
-            const category = document.getElementById('modal-asset-category').value;
-            const config = categoryMeta[category] || categoryMeta['Immobilier'];
+        // Dedicated Real Estate View Renderer
+        function renderRealEstatePage() {
+            const immoAssets = rawAssets.filter(a => a.category === 'Immobilier');
+            let totalVal = 0, totalDebt = 0, totalCF = 0;
 
-            const unitFields = document.getElementById('unit-fields');
-            const balanceField = document.getElementById('balance-field');
-            const balanceLabel = document.getElementById('balance-label');
+            immoAssets.forEach(a => {
+                const v = getAssetComputedValues(a);
+                totalVal += v.currentValue;
+                totalDebt += v.debt;
+                totalCF += v.monthlyCashflow;
+            });
 
-            if (config.isUnit) {
-                unitFields.classList.remove('hidden');
-                balanceField.classList.add('hidden');
-            } else {
-                unitFields.classList.add('hidden');
-                balanceField.classList.remove('hidden');
-                balanceLabel.innerText = config.labelBalance || 'Valeur estimée (€)';
+            document.getElementById('immo-kpi-total').innerText = formatEUR(totalVal);
+            document.getElementById('immo-kpi-debt').innerText = formatEUR(totalDebt);
+            document.getElementById('immo-kpi-equity').innerText = formatEUR(totalVal - totalDebt);
+            document.getElementById('immo-kpi-cashflow').innerText = `${totalCF >= 0 ? '+' : ''}${formatEUR(totalCF)}/m`;
+
+            const tbody = document.getElementById('immo-table-body');
+            if (immoAssets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun bien immobilier enregistré.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = immoAssets.map(a => {
+                const v = getAssetComputedValues(a);
+                return `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="px-6 py-4 font-bold text-white">${escapeHtml(a.name)}</td>
+                        <td class="px-6 py-4 text-slate-400">Résidence / Locatif</td>
+                        <td class="px-6 py-4 text-right font-extrabold text-white">${formatEUR(v.currentValue)}</td>
+                        <td class="px-6 py-4 text-right text-rose-400 font-bold">${formatEUR(v.debt)}</td>
+                        <td class="px-6 py-4 text-right text-emerald-400">${formatEUR(a.rent)}</td>
+                        <td class="px-6 py-4 text-right text-slate-300">${formatEUR(a.loan)}</td>
+                        <td class="px-6 py-4 text-right font-bold ${v.monthlyCashflow >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                            ${v.monthlyCashflow >= 0 ? '+' : ''}${formatEUR(v.monthlyCashflow)}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="openEditModal('${a.id}')" class="p-1.5 text-slate-400 hover:text-indigo-400">✏️</button>
+                            <button onclick="openDeleteModal('${a.id}', '${escapeHtml(a.name)}')" class="p-1.5 text-slate-400 hover:text-rose-400">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.calculateImmoYield = () => {
+            const price = parseFloat(document.getElementById('calc-immo-price').value) || 0;
+            const rent = parseFloat(document.getElementById('calc-immo-rent').value) || 0;
+            const loan = parseFloat(document.getElementById('calc-immo-loan').value) || 0;
+
+            const grossYield = price > 0 ? ((rent * 12) / price) * 100 : 0;
+            const cf = rent - loan;
+
+            document.getElementById('calc-yield-res').innerText = `${grossYield.toFixed(2)} %`;
+            document.getElementById('calc-cf-res').innerText = `${cf >= 0 ? '+' : ''}${cf} €/mois`;
+        };
+
+        // Dedicated Stocks View Renderer
+        function renderStocksPage() {
+            const stockAssets = rawAssets.filter(a => a.category === 'Bourse');
+            let totalVal = 0, totalInvested = 0;
+
+            stockAssets.forEach(a => {
+                const v = getAssetComputedValues(a);
+                totalVal += v.currentValue;
+                totalInvested += v.investedValue;
+            });
+
+            const totalGain = totalVal - totalInvested;
+            const totalGainPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
+
+            document.getElementById('stocks-kpi-total').innerText = formatEUR(totalVal);
+            document.getElementById('stocks-kpi-invested').innerText = formatEUR(totalInvested);
+            document.getElementById('stocks-kpi-gain').innerText = `${totalGain >= 0 ? '+' : ''}${formatEUR(totalGain)}`;
+            document.getElementById('stocks-kpi-gain-pct').innerText = formatPCT(totalGainPct);
+            document.getElementById('stocks-kpi-div').innerText = `${formatEUR(totalVal * 0.025)}/an`;
+
+            const tbody = document.getElementById('stocks-table-body');
+            if (stockAssets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun titre boursier enregistré.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = stockAssets.map(a => {
+                const v = getAssetComputedValues(a);
+                return `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="px-6 py-4 font-bold text-white">${escapeHtml(a.name)}</td>
+                        <td class="px-6 py-4 text-slate-400">PEA / CTO</td>
+                        <td class="px-6 py-4 text-right font-semibold text-slate-300">${formatQty(a.qty)}</td>
+                        <td class="px-6 py-4 text-right text-slate-400">${formatEUR(a.pru)}</td>
+                        <td class="px-6 py-4 text-right font-semibold text-white">${formatEUR(a.currentPrice)}</td>
+                        <td class="px-6 py-4 text-right font-black text-indigo-300">${formatEUR(v.currentValue)}</td>
+                        <td class="px-6 py-4 text-right font-bold ${v.gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                            ${v.gain >= 0 ? '+' : ''}${formatEUR(v.gain)} (${formatPCT(v.gainPct)})
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="openEditModal('${a.id}')" class="p-1.5 text-slate-400 hover:text-indigo-400">✏️</button>
+                            <button onclick="openDeleteModal('${a.id}', '${escapeHtml(a.name)}')" class="p-1.5 text-slate-400 hover:text-rose-400">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Dedicated Banking View Renderer
+        function renderBankingPage() {
+            const bankAssets = rawAssets.filter(a => a.category === 'Bancaire');
+            let totalBalance = 0, totalInterest = 0;
+
+            bankAssets.forEach(a => {
+                const v = getAssetComputedValues(a);
+                totalBalance += v.currentValue;
+                const rate = parseFloat(a.rate) || 0;
+                totalInterest += (v.currentValue * rate) / 100;
+            });
+
+            const avgRate = totalBalance > 0 ? (totalInterest / totalBalance) * 100 : 0;
+
+            document.getElementById('banking-kpi-total').innerText = formatEUR(totalBalance);
+            document.getElementById('banking-kpi-interest').innerText = `+${formatEUR(totalInterest)}/an`;
+            document.getElementById('banking-kpi-rate').innerText = `${avgRate.toFixed(2)} %`;
+
+            const tbody = document.getElementById('banking-table-body');
+            if (bankAssets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">Aucun compte d'épargne enregistré.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = bankAssets.map(a => {
+                const v = getAssetComputedValues(a);
+                const rate = parseFloat(a.rate) || 0;
+                const estInt = (v.currentValue * rate) / 100;
+
+                return `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="px-6 py-4 font-bold text-white">${escapeHtml(a.name)}</td>
+                        <td class="px-6 py-4 text-slate-400">Livret / Dépôt</td>
+                        <td class="px-6 py-4 text-right font-bold text-cyan-400">${rate.toFixed(1)} %</td>
+                        <td class="px-6 py-4 text-right font-black text-white">${formatEUR(v.currentValue)}</td>
+                        <td class="px-6 py-4 text-right font-semibold text-emerald-400">+${formatEUR(estInt)}/an</td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="openEditModal('${a.id}')" class="p-1.5 text-slate-400 hover:text-indigo-400">✏️</button>
+                            <button onclick="openDeleteModal('${a.id}', '${escapeHtml(a.name)}')" class="p-1.5 text-slate-400 hover:text-rose-400">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Dedicated Crypto & Alternative View Renderer
+        function renderCryptoPage() {
+            const altAssets = rawAssets.filter(a => a.category === 'Alternatifs');
+            const globalBrut = rawAssets.reduce((acc, a) => acc + getAssetComputedValues(a).currentValue, 0);
+
+            let totalVal = 0, totalInvested = 0;
+            altAssets.forEach(a => {
+                const v = getAssetComputedValues(a);
+                totalVal += v.currentValue;
+                totalInvested += v.investedValue;
+            });
+
+            const totalGain = totalVal - totalInvested;
+            const totalGainPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
+            const share = globalBrut > 0 ? (totalVal / globalBrut) * 100 : 0;
+
+            document.getElementById('crypto-kpi-total').innerText = formatEUR(totalVal);
+            document.getElementById('crypto-kpi-invested').innerText = formatEUR(totalInvested);
+            document.getElementById('crypto-kpi-gain').innerText = `${totalGain >= 0 ? '+' : ''}${formatEUR(totalGain)}`;
+            document.getElementById('crypto-kpi-gain-pct').innerText = formatPCT(totalGainPct);
+            document.getElementById('crypto-kpi-share').innerText = `${share.toFixed(1)} %`;
+
+            const tbody = document.getElementById('crypto-table-body');
+            if (altAssets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun actif alternatif enregistré.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = altAssets.map(a => {
+                const v = getAssetComputedValues(a);
+                return `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="px-6 py-4 font-bold text-white">${escapeHtml(a.name)}</td>
+                        <td class="px-6 py-4 text-slate-400">Crypto / Or / Art</td>
+                        <td class="px-6 py-4 text-right text-slate-300 font-semibold">${formatQty(a.qty)}</td>
+                        <td class="px-6 py-4 text-right text-slate-400">${formatEUR(a.pru)}</td>
+                        <td class="px-6 py-4 text-right font-semibold text-white">${formatEUR(a.currentPrice)}</td>
+                        <td class="px-6 py-4 text-right font-black text-purple-300">${formatEUR(v.currentValue)}</td>
+                        <td class="px-6 py-4 text-right font-bold ${v.gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                            ${v.gain >= 0 ? '+' : ''}${formatEUR(v.gain)} (${formatPCT(v.gainPct)})
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="openEditModal('${a.id}')" class="p-1.5 text-slate-400 hover:text-indigo-400">✏️</button>
+                            <button onclick="openDeleteModal('${a.id}', '${escapeHtml(a.name)}')" class="p-1.5 text-slate-400 hover:text-rose-400">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Projections & Compound Interest Simulator Engine
+        window.updateProjectionChart = () => {
+            const initial = parseFloat(document.getElementById('proj-initial').value) || 0;
+            const monthly = parseFloat(document.getElementById('proj-monthly').value) || 0;
+            const ratePct = parseFloat(document.getElementById('proj-rate').value) || 0;
+            const years = parseInt(document.getElementById('proj-years').value) || 10;
+
+            const labels = [];
+            const dataInvested = [];
+            const dataTotal = [];
+
+            let currentTotal = initial;
+            let currentInvested = initial;
+            const r = ratePct / 100;
+
+            for (let y = 0; y <= years; y++) {
+                labels.push(`Année ${y}`);
+                dataInvested.push(Math.round(currentInvested));
+                dataTotal.push(Math.round(currentTotal));
+
+                // Compounding monthly
+                for (let m = 0; m < 12; m++) {
+                    currentTotal = (currentTotal + monthly) * (1 + r / 12);
+                    currentInvested += monthly;
+                }
+            }
+
+            const finalTotal = dataTotal[dataTotal.length - 1];
+            const finalInvested = dataInvested[dataInvested.length - 1];
+            const finalInterest = finalTotal - finalInvested;
+
+            document.getElementById('proj-res-invested').innerText = formatEUR(finalInvested);
+            document.getElementById('proj-res-interest').innerText = formatEUR(finalInterest);
+            document.getElementById('proj-res-total').innerText = formatEUR(finalTotal);
+
+            const ctx = document.getElementById('projectionChart')?.getContext('2d');
+            if (!ctx) return;
+
+            if (projectionChartInstance) projectionChartInstance.destroy();
+
+            projectionChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Patrimoine Total (avec Intérêts)',
+                            data: dataTotal,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Capital Investi Versé',
+                            data: dataInvested,
+                            borderColor: '#6366f1',
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } } }
+                    }
+                }
+            });
+        };
+
+        // Unified Asset Modal Form Controller
+        window.adjustModalFieldsByCategory = () => {
+            const cat = document.getElementById('modal-asset-category').value;
+            const groupImmo = document.getElementById('field-group-immo');
+            const groupUnit = document.getElementById('field-group-unit');
+            const groupBank = document.getElementById('field-group-banking');
+
+            groupImmo.classList.add('hidden');
+            groupUnit.classList.add('hidden');
+            groupBank.classList.add('hidden');
+
+            if (cat === 'Immobilier') {
+                groupImmo.classList.remove('hidden');
+            } else if (cat === 'Bourse' || cat === 'Alternatifs') {
+                groupUnit.classList.remove('hidden');
+            } else if (cat === 'Bancaire') {
+                groupBank.classList.remove('hidden');
             }
         };
 
-        window.openAddModal = () => {
-            document.getElementById('modal-title').innerText = "Ajouter un actif";
-            document.getElementById('modal-submit-btn').innerText = "Enregistrer";
+        window.openGenericAddModal = () => {
+            document.getElementById('modal-title').innerText = "Ajouter un investissement";
             document.getElementById('modal-asset-id').value = "";
             document.getElementById('modal-asset-name').value = "";
             document.getElementById('modal-asset-category').value = "Immobilier";
-            document.getElementById('modal-asset-qty').value = "";
-            document.getElementById('modal-asset-price').value = "";
-            document.getElementById('modal-asset-balance').value = "";
             
-            toggleCategoryFields();
+            // Clear all sub-inputs
+            ['modal-immo-value', 'modal-immo-debt', 'modal-immo-rent', 'modal-immo-loan', 'modal-unit-qty', 'modal-unit-pru', 'modal-unit-current', 'modal-bank-balance', 'modal-bank-rate'].forEach(id => {
+                document.getElementById(id).value = "";
+            });
+
+            adjustModalFieldsByCategory();
             document.getElementById('asset-modal').classList.remove('hidden');
+        };
+
+        window.openModalForCategory = (categoryName) => {
+            openGenericAddModal();
+            document.getElementById('modal-asset-category').value = categoryName;
+            adjustModalFieldsByCategory();
         };
 
         window.openEditModal = (id) => {
             const asset = rawAssets.find(a => a.id === id);
             if (!asset) return;
 
-            document.getElementById('modal-title').innerText = "Modifier l'actif";
-            document.getElementById('modal-submit-btn').innerText = "Mettre à jour";
+            document.getElementById('modal-title').innerText = "Modifier l'investissement";
             document.getElementById('modal-asset-id').value = asset.id;
             document.getElementById('modal-asset-name').value = asset.name || "";
             document.getElementById('modal-asset-category').value = asset.category || "Immobilier";
-            document.getElementById('modal-asset-qty').value = asset.qty || "";
-            document.getElementById('modal-asset-price').value = asset.price || "";
-            document.getElementById('modal-asset-balance').value = asset.balance || asset.value || asset.amount || "";
 
-            toggleCategoryFields();
+            document.getElementById('modal-immo-value').value = asset.value || "";
+            document.getElementById('modal-immo-debt').value = asset.debt || "";
+            document.getElementById('modal-immo-rent').value = asset.rent || "";
+            document.getElementById('modal-immo-loan').value = asset.loan || "";
+
+            document.getElementById('modal-unit-qty').value = asset.qty || "";
+            document.getElementById('modal-unit-pru').value = asset.pru || "";
+            document.getElementById('modal-unit-current').value = asset.currentPrice || "";
+
+            document.getElementById('modal-bank-balance').value = asset.balance || "";
+            document.getElementById('modal-bank-rate').value = asset.rate || "";
+
+            adjustModalFieldsByCategory();
             document.getElementById('asset-modal').classList.remove('hidden');
         };
 
@@ -935,41 +1642,42 @@
             document.getElementById('asset-modal').classList.add('hidden');
         };
 
-        window.handleFormSubmit = async (event) => {
-            event.preventDefault();
+        window.handleFormSubmit = async (e) => {
+            e.preventDefault();
             if (!currentUser) return;
 
             const id = document.getElementById('modal-asset-id').value;
             const name = document.getElementById('modal-asset-name').value.trim();
             const category = document.getElementById('modal-asset-category').value;
-            const config = categoryMeta[category] || categoryMeta['Immobilier'];
 
             if (!name) return;
 
-            const assetData = {
-                name,
-                category,
-                updatedAt: Date.now()
-            };
+            const data = { name, category, updatedAt: Date.now() };
 
-            if (config.isUnit) {
-                assetData.qty = parseFloat(document.getElementById('modal-asset-qty').value) || 0;
-                assetData.price = parseFloat(document.getElementById('modal-asset-price').value) || 0;
-            } else {
-                assetData.balance = parseFloat(document.getElementById('modal-asset-balance').value) || 0;
-                assetData.value = assetData.balance;
+            if (category === 'Immobilier') {
+                data.value = parseFloat(document.getElementById('modal-immo-value').value) || 0;
+                data.debt = parseFloat(document.getElementById('modal-immo-debt').value) || 0;
+                data.rent = parseFloat(document.getElementById('modal-immo-rent').value) || 0;
+                data.loan = parseFloat(document.getElementById('modal-immo-loan').value) || 0;
+            } else if (category === 'Bourse' || category === 'Alternatifs') {
+                data.qty = parseFloat(document.getElementById('modal-unit-qty').value) || 0;
+                data.pru = parseFloat(document.getElementById('modal-unit-pru').value) || 0;
+                data.currentPrice = parseFloat(document.getElementById('modal-unit-current').value) || data.pru;
+            } else if (category === 'Bancaire') {
+                data.balance = parseFloat(document.getElementById('modal-bank-balance').value) || 0;
+                data.rate = parseFloat(document.getElementById('modal-bank-rate').value) || 0;
             }
 
             try {
                 if (id) {
                     const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'assets', id);
-                    await updateDoc(docRef, assetData);
-                    showToast("Actif mis à jour avec succès !");
+                    await updateDoc(docRef, data);
+                    showToast("Investissement mis à jour !");
                 } else {
-                    assetData.createdAt = Date.now();
+                    data.createdAt = Date.now();
                     const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'assets');
-                    await addDoc(colRef, assetData);
-                    showToast("Actif ajouté avec succès !");
+                    await addDoc(colRef, data);
+                    showToast("Nouvel investissement enregistré !");
                 }
                 closeModal();
             } catch (err) {
@@ -991,27 +1699,26 @@
 
         window.confirmDeleteAsset = async () => {
             if (!assetToDeleteId || !currentUser) return;
-
             try {
                 const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'assets', assetToDeleteId);
                 await deleteDoc(docRef);
-                showToast("Actif supprimé avec succès");
+                showToast("Investissement retiré");
                 closeDeleteModal();
             } catch (err) {
-                console.error("Delete error:", err);
-                showToast("Erreur lors de la suppression", "error");
+                showToast("Erreur de suppression", "error");
             }
         };
 
-        // Close modals on background backdrop click
+        function escapeHtml(str) {
+            return (str || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+        }
+
+        // Close Modals on background click
         document.getElementById('asset-modal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('asset-modal')) closeModal();
         });
         document.getElementById('delete-modal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('delete-modal')) closeDeleteModal();
-        });
-        document.getElementById('admin-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('admin-modal')) closeAdminModal();
         });
     </script>
 </body>
